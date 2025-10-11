@@ -1,0 +1,11 @@
+beautifulsoup4==4.11.1
+pandas
+webdriver-manager
+selenium==4.9.1
+lxml
+pyspark==3.5.3
+apache-airflow-providers-apache-spark
+apache-airflow-providers-amazon
+apache-airflow==3.0.6
+findspark
+python-dotenv
