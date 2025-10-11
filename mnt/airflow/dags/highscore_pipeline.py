@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from src.utility import CSVBronze
+from src.utility import CSVBronze, validate_highscore_csv
 from src.extract import HighscoreVocation
 
 from airflow.decorators import dag, task
@@ -29,6 +29,11 @@ def upload(vocation: str) -> str:
     if method_name and hasattr(highscore, method_name):
       method = getattr(highscore, method_name)
       df = method()
+
+      # Validação mínima antes do upload
+      expected_columns = ["Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"]
+      if not validate_highscore_csv(df, expected_columns=expected_columns):
+          raise ValueError(f"Validação falhou para {method_name}")
 
       minio = CSVBronze(s3_endpoint, access_key, secret_key)
       return minio.write(df, method_name, bucket_name="bronze")
