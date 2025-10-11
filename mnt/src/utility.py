@@ -38,9 +38,16 @@ class CSVBronze:
     """
 
     def __init__(self, s3_endpoint, access_key, secret_key):
+
+        if not all([s3_endpoint, access_key, secret_key]):
+            raise ValueError(
+                "S3 credentials missing: verifique S3_ENDPOINT, AWS_ACCESS_KEY_ID e AWS_SECRET_ACCESS_KEY"
+            )
+            
         self.endpoint_url = s3_endpoint
         self.access_key = access_key
         self.secret_key = secret_key
+        
 
         self.s3_client = boto3.client(
             's3',
