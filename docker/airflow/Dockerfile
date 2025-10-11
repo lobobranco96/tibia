@@ -15,17 +15,13 @@ ENV PATH=$PATH:/usr/bin
 USER root
 
 # Instalar dependências do sistema + chromium e chromedriver
-RUN apt-get update && apt-get install -y \
-    wget unzip gnupg fonts-liberation libnss3 libxss1 libasound2 libx11-xcb1 chromium chromium-driver \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-
 RUN set -eux; \
     apt-get update && \
-    apt-get install --yes --no-install-recommends \
-    wget \
-    openjdk-17-jdk \
-    python3.11 python3.11-venv python3.11-dev
+    apt-get install -y --no-install-recommends \
+        wget unzip gnupg fonts-liberation libnss3 libxss1 libasound2 libx11-xcb1 chromium chromium-driver \
+        openjdk-17-jdk python3.11 python3.11-venv python3.11-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /opt
 
