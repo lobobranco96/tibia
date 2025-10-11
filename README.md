@@ -100,11 +100,13 @@ Cada vocação possui **uma task separada**:
    - As demais linhas são os **valores dos jogadores**.
    - Exemplo:
 
-| Rank | Name       | Vocation | World       | Level | Points     | WorldType       |
-|------|------------|----------|------------|-------|-----------|----------------|
-| 1    | PlayerOne  | Knight   | Antica     | 999   | 250000000 | Open PvP       |
-| 2    | PlayerTwo  | Knight   | Thais      | 995   | 240000000 | Open PvP       |
-| 3    | PlayerThree| Knight   | Ab'Dendriel| 990   | 230000000 | Open PvP       |
+| Rank | Name                | Vocation       | World     | Level | Points         | WorldType |
+|------|--------------------|----------------|-----------|-------|----------------|-----------|
+| 1    | Khaos Poderoso      | Master Sorcerer | Rasteibra | 2515  | 264,738,322,692 | Open PvP  |
+| 2    | Goa Luccas          | Master Sorcerer | Inabra    | 2357  | 217,738,829,108 | Open PvP  |
+| 3    | Syriz               | Master Sorcerer | Thyria    | 2189  | 174,396,658,081 | Open PvP  |
+| 4    | Dany Ellmagnifico   | Master Sorcerer | Inabra    | 2160  | 167,580,849,914 | Open PvP  |
+| 5    | Zonatto Bombinhams  | Master Sorcerer | Honbra    | 2132  | 161,212,779,898 | Open PvP  |
 
 4. **Concatenar dados por mundo**
 - Todos os DataFrames de diferentes tipos de mundo e páginas são unidos em **um único DataFrame por vocação**.
@@ -113,11 +115,12 @@ Cada vocação possui **uma task separada**:
 
 Após extrair e consolidar os dados das diferentes vocações, o próximo passo é **armazenar os DataFrames resultantes** de forma estruturada na camada Bronze do Data Lake, utilizando **MinIO**.
 
-#### Classe `CSVBronze`
-
 A classe `CSVBronze` é responsável por:
-
 - Receber um **DataFrame** do pandas contendo os dados extraídos.
 - Salvar esse DataFrame como **CSV** no MinIO.
 - **Particionar os arquivos por data** (`year/month/day`) para facilitar organização e versionamento.
 
+
+## EM CONSTRUÇÃO
+
+## FUTURAMENTE EVOLUIR PARA SESSÇÃO DE SKILLS (Magic Level, Axe, Sword, Distance e etc)
