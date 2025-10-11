@@ -1,0 +1,91 @@
+x-common-log-config: &default_config
+  networks:
+    - lakehouse_network
+  env_file:
+    - .credentials.conf
+
+x-common-healthcheck-default: &default_healthcheck
+  timeout: 45s
+  interval: 10s
+  retries: 10
+  start_period: 10s
+
+services:
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - .credentials.conf
+    command: server /data --console-address ":9001"
+    volumes:
+      - lakehouse_minio_vol:/data
+      - ../mnt/minio:/data
+      - ../mnt/minio/minio-client:/root/.mc
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - lakehouse_network
+
+  minio-bucket:
+    image: minio/mc:latest
+    container_name: minio-bucket
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      sleep 10;
+      until mc alias set myminio http://minio:9000 admin password >/dev/null 2>&1; do
+        echo 'Aguardando MinIO...';
+        sleep 5;
+      done;
+      echo 'MinIO está pronto. Iniciando configuração dos buckets.';
+      mc mb myminio/bronze;
+      mc mb myminio/silver;
+      mc mb myminio/gold;
+      echo 'Buckets criados com sucesso.';
+      mc anonymous set public myminio/bronze;
+      mc anonymous set public myminio/silver;
+      mc anonymous set public myminio/gold;
+      echo 'Políticas de acesso definidas para público.';
+      "
+    env_file:
+      - .credentials.conf
+    networks:
+      - lakehouse_network
+
+  postgres_nessie:
+    image: postgres:16
+    container_name: postgres_nessie
+    <<: *default_config
+    env_file:
+      - .credentials.conf
+    volumes:
+      - lakehouse_pg_nessie_vol:/var/lib/postgresql/data
+
+  nessie:
+    image: bitnami/nessie:0.99.0
+    container_name: nessie
+    restart: always
+    <<: *default_config
+    env_file:
+      - .credentials.conf
+    ports:
+      - 19120:19120
+    depends_on:
+      - postgres_nessie
+
+volumes:
+  lakehouse_minio_vol:
+  lakehouse_pg_nessie_vol:
+
+networks:
+  lakehouse_network:
+    driver: bridge

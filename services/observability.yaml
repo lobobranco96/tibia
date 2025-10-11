@@ -1,0 +1,41 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: prometheus
+    volumes:
+      - ../docker/prometheus/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - lakehouse_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    env_file:
+      - .credentials.conf
+    ports:
+      - "3000:3000"  
+    depends_on:
+      - prometheus  
+    networks:
+      - lakehouse_network
+    volumes:
+      - grafana-storage:/var/lib/grafana  
+
+  cadvisor:
+    image: google/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8081:8080" 
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock  
+    networks:
+      - lakehouse_network
+
+volumes:
+  grafana-storage: 
+
+networks:
+  lakehouse_network:
+    driver: bridge

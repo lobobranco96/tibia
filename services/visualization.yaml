@@ -1,0 +1,31 @@
+x-common-log-config: &default_config
+  networks:
+    - lakehouse_network
+  env_file:
+    - .credentials.conf
+
+x-common-healthcheck-default: &default_healthcheck
+  timeout: 45s
+  interval: 10s
+  retries: 10
+  start_period: 10s
+
+services:
+  dremio:
+    image: dremio/dremio-oss:25.1
+    ports:
+      - 9047:9047
+      # - 31010:31010
+      # - 32010:32010
+    container_name: dremio
+    volumes:
+      - dremio_warehouse_vol:/opt/dremio/data
+    <<: *default_config
+
+
+volumes:
+  dremio_warehouse_vol:
+
+networks:
+  lakehouse_network:
+    driver: bridge
