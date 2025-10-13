@@ -64,7 +64,7 @@ class CSVBronze:
         self.month = today.strftime("%m")
         self.day = today.strftime("%d")
 
-    def write(self, df, dataset_name, bucket_name="bronze"):
+    def write(self, df, category, dataset_name, bucket_name="bronze"):
         """
         Escreve o DataFrame como CSV na camada Bronze do MinIO particionado por data.
 
@@ -80,7 +80,12 @@ class CSVBronze:
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
 
-        key = f"year={self.year}/month={self.month}/day={self.day}/{dataset_name}.csv"
+        key = (f"year={self.year}/"
+              f"month={self.month}/"
+              f"day={self.day}/"
+              f"{category}/"
+              f"{dataset_name}.csv"
+              )
 
         # Upload no MinIO
         self.s3_client.put_object(
