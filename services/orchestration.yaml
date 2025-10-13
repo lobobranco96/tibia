@@ -40,14 +40,13 @@ x-airflow-common:
     - ../mnt/airflow/plugins:/opt/airflow/plugins
     - ../mnt/src:/opt/airflow/dags/src
     - ../mnt/spark:/opt/airflow/dags/spark
-
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
     postgres:
       condition: service_healthy
-    networks:
-      - lakehouse_network  
+  networks:
+    - lakehouse_network  
 
 services:
   postgres:
@@ -208,7 +207,6 @@ services:
         echo "Files in shared volumes:"
         echo
         ls -la /opt/airflow/{logs,dags,plugins,config}
-
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env

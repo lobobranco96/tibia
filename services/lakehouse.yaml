@@ -4,12 +4,6 @@ x-common-log-config: &default_config
   env_file:
     - .credentials.conf
 
-x-common-healthcheck-default: &default_healthcheck
-  timeout: 45s
-  interval: 10s
-  retries: 10
-  start_period: 10s
-
 services:
 
   minio:
@@ -18,8 +12,7 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-    env_file:
-      - .credentials.conf
+    <<: *default_config
     command: server /data --console-address ":9001"
     volumes:
       - lakehouse_minio_vol:/data
@@ -30,8 +23,6 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
-    networks:
-      - lakehouse_network
 
   minio-bucket:
     image: minio/mc:latest
@@ -56,27 +47,20 @@ services:
       mc anonymous set public myminio/gold;
       echo 'Políticas de acesso definidas para público.';
       "
-    env_file:
-      - .credentials.conf
-    networks:
-      - lakehouse_network
+    <<: *default_config
 
   postgres_nessie:
     image: postgres:16
     container_name: postgres_nessie
     <<: *default_config
-    env_file:
-      - .credentials.conf
     volumes:
       - lakehouse_pg_nessie_vol:/var/lib/postgresql/data
 
   nessie:
-    image: bitnami/nessie:0.99.0
+    image: ghcr.io/projectnessie/nessie:0.105.3-java
     container_name: nessie
     restart: always
     <<: *default_config
-    env_file:
-      - .credentials.conf
     ports:
       - 19120:19120
     depends_on:

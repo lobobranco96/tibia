@@ -4,12 +4,6 @@ x-common-log-config: &default_config
   env_file:
     - .credentials.conf
 
-x-common-healthcheck-default: &default_healthcheck
-  timeout: 45s
-  interval: 10s
-  retries: 10
-  start_period: 10s
-
 services:
   dremio:
     image: dremio/dremio-oss:25.1
