@@ -209,4 +209,4 @@ __marimo__/
 # Minio data
 
 mnt/minio/.minio.sys/
-colab/ #diretorio google colab
+colab/
