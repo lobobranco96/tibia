@@ -50,27 +50,27 @@ def highscore_pipeline():
 
   @task
   def none():
-      return upload('none', "level")
+      return upload('none', "experience")
 
   @task
   def knight():
-      return upload('knight', "level")
+      return upload('knight', "experience")
 
   @task
   def paladin():
-      return upload('paladin', "level")
+      return upload('paladin', "experience")
 
   @task
   def sorcerer():
-      return upload('sorcerer', "level")
+      return upload('sorcerer', "experience")
 
   @task
   def druid():
-      return upload('druid', "level")
+      return upload('druid', "experience")
 
   @task
   def monk():
-      return upload('monk', "level")
+      return upload('monk', "experience")
 
   with TaskGroup("extract") as extract_group:
       none_task = none()
