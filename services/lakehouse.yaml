@@ -66,6 +66,15 @@ services:
     depends_on:
       - postgres_nessie
 
+  notebook:
+    build: ../docker/notebook
+    container_name: notebook
+    <<: *default_config
+    ports:
+      - 8888:8888
+    volumes:
+      - ../mnt/notebooks:/app/
+
 volumes:
   lakehouse_minio_vol:
   lakehouse_pg_nessie_vol:
