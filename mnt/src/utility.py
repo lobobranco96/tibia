@@ -78,7 +78,10 @@ class CSVBronze:
         """
         # Converte DataFrame em CSV na memória
         csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False)
+        df.to_csv(csv_buffer,
+            encoding="utf-8",      
+            sep=";", 
+            index=False)
 
         key = (f"year={self.year}/"
               f"month={self.month}/"
