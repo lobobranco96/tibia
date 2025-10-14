@@ -80,6 +80,6 @@ def highscore_pipeline():
       druid_task = druid()
       monk_task = monk()
 
-      [none, knight, paladin, sorcerer, druid, monk]
+      [none_task, knight_task, paladin_task, sorcerer_task, druid_task, monk_task]
 
 highscore = highscore_pipeline()
