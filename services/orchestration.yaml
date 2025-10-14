@@ -40,6 +40,7 @@ x-airflow-common:
     - ../mnt/airflow/plugins:/opt/airflow/plugins
     - ../mnt/src:/opt/airflow/dags/src
     - ../mnt/spark:/opt/airflow/dags/spark
+
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -51,8 +52,10 @@ x-airflow-common:
 services:
   postgres:
     image: postgres:13
-    env_file:
-      - .credentials.conf
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
@@ -207,6 +210,7 @@ services:
         echo "Files in shared volumes:"
         echo
         ls -la /opt/airflow/{logs,dags,plugins,config}
+
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env

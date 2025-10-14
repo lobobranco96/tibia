@@ -53,6 +53,10 @@ services:
     image: postgres:16
     container_name: postgres_nessie
     <<: *default_config
+    environment:
+      POSTGRES_USER: nessie
+      POSTGRES_PASSWORD: nessie
+      POSTGRES_DB: nessie
     volumes:
       - lakehouse_pg_nessie_vol:/var/lib/postgresql/data
 
@@ -61,19 +65,25 @@ services:
     container_name: nessie
     restart: always
     <<: *default_config
+    environment:
+      - NESSIE_VERSION_STORE_TYPE=JDBC
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://postgres_nessie:5432/nessie
+      - QUARKUS_DATASOURCE_USERNAME=nessie
+      - QUARKUS_DATASOURCE_PASSWORD=nessie
+      - NESSIE_URI=http://nessie:19120/api/v1
     ports:
       - 19120:19120
     depends_on:
       - postgres_nessie
 
-  notebook:
-    build: ../docker/notebook
-    container_name: notebook
-    <<: *default_config
-    ports:
-      - 8888:8888
-    volumes:
-      - ../mnt/notebooks:/app/
+  # notebook:
+  #   build: ../docker/notebook
+  #   container_name: notebook
+  #   <<: *default_config
+  #   ports:
+  #     - 8888:8888
+  #   volumes:
+  #     - ../mnt/notebooks:/app/
 
 volumes:
   lakehouse_minio_vol:
