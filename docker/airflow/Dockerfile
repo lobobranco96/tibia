@@ -11,24 +11,6 @@ USER root
 
 RUN apt-get update && apt-get install -y wget unzip fonts-liberation libnss3 libxss1 libasound2 libx11-xcb1 openjdk-17-jdk python3.11 python3.11-venv python3.11-dev
 
-# 
-RUN wget -q https://storage.googleapis.com/chrome-for-testing-public/114.0.5735.90/linux64/chrome-linux64.zip && \
-    wget -q https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip && \
-    unzip -q chrome-linux64.zip && \
-    unzip -q chromedriver_linux64.zip && \
-    mkdir -p /usr/local/share/chrome && \
-    mv chrome-linux64 /usr/local/share/chrome/ || mv chrome-* /usr/local/share/chrome/ || true && \
-    mv chromedriver /usr/local/share/chrome/chromedriver || mv chromedriver-linux64/chromedriver /usr/local/share/chrome/chromedriver && \
-    ln -sf /usr/local/share/chrome/chrome-linux64/chrome /usr/bin/chrome || ln -sf /usr/local/share/chrome/chrome*/chrome /usr/bin/chrome && \
-    ln -sf /usr/local/share/chrome/chromedriver /usr/bin/chromedriver && \
-    chmod +x /usr/bin/chrome /usr/bin/chromedriver && \
-    rm -rf chrome-linux64.zip chromedriver_linux64.zip chromedriver-linux64
-
-# Variáveis para Selenium saber onde está o Chromium e Chromedriver
-ENV CHROME_BIN=/usr/bin/chrome
-ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
-ENV PATH=$PATH:/usr/bin
-
 
 WORKDIR /opt
 
