@@ -12,9 +12,9 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def extract_vocation(vocation: str, category: str) -> str:
+def extract_vocation(vocation: str) -> str:
     # Config MinIO
-
+    category = 'experience'
     valid_vocations = {
         'none': 'no_vocation',
         'knight': 'knight',

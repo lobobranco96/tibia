@@ -13,12 +13,12 @@ default_args = {
 def highscore_pipeline():
 
   with TaskGroup("extract") as extract_group:
-      none_task = extract_vocation('none', 'experience')
-      knight_task = extract_vocation('knight', 'experience')
-      paladin_task = extract_vocation('paladin', 'experience')
-      sorcerer_task = extract_vocation('sorcerer', 'experience')
-      druid_task = extract_vocation('druid', 'experience')
-      monk_task = extract_vocation('monk', 'experience')
+      none_task = extract_vocation('none')
+      knight_task = extract_vocation('knight')
+      paladin_task = extract_vocation('paladin')
+      sorcerer_task = extract_vocation('sorcerer')
+      druid_task = extract_vocation('druid')
+      monk_task = extract_vocation('monk')
 
       [none_task, knight_task, paladin_task, sorcerer_task, druid_task, monk_task]
 
