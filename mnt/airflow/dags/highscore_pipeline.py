@@ -1,45 +1,9 @@
 import os
 from datetime import datetime, timedelta
-from src.utility import CSVBronze, validate_highscore_csv
-from src.extract import HighscoreVocation
+from src.bronze_app import extract_vocation
 
 from airflow.decorators import dag, task
 from airflow.utils.task_group import TaskGroup
-from airflow.utils.log.logging_mixin import LoggingMixin
-
-logger = LoggingMixin().log
-
-def upload(vocation: str, category: str) -> str:
-    # Config MinIO
-    s3_endpoint = os.getenv("S3_ENDPOINT")
-    access_key = os.getenv("AWS_ACCESS_KEY_ID")
-    secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-
-    valid_vocations = {
-        'none': 'no_vocation',
-        'knight': 'knight',
-        'paladin': 'paladin',
-        'sorcerer': 'sorcerer',
-        'druid': 'druid',
-        'monk': 'monk',
-    }
-    highscore = HighscoreVocation()
-
-    method_name = valid_vocations.get(vocation.lower())
-    if method_name and hasattr(highscore, method_name):
-      method = getattr(highscore, method_name)
-      df = method()
-
-      # Validação mínima antes do upload
-      expected_columns = ["Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"]
-      if not validate_highscore_csv(df, expected_columns=expected_columns):
-          raise ValueError(f"Validação falhou para {method_name}")
-
-      minio = CSVBronze(s3_endpoint, access_key, secret_key)
-      return minio.write(df, method_name, category, bucket_name="bronze")
-    else:
-      logger.info("Vocação inválida. Use: none, knight, paladin, sorcerer, druid ou monk.")
-      return None
 
 default_args = {
     "owner": "lobobranco",
@@ -48,37 +12,13 @@ default_args = {
 }
 def highscore_pipeline():
 
-  @task
-  def none():
-      return upload('none', "experience")
-
-  @task
-  def knight():
-      return upload('knight', "experience")
-
-  @task
-  def paladin():
-      return upload('paladin', "experience")
-
-  @task
-  def sorcerer():
-      return upload('sorcerer', "experience")
-
-  @task
-  def druid():
-      return upload('druid', "experience")
-
-  @task
-  def monk():
-      return upload('monk', "experience")
-
   with TaskGroup("extract") as extract_group:
-      none_task = none()
-      knight_task = knight()
-      paladin_task = paladin()
-      sorcerer_task = sorcerer()
-      druid_task = druid()
-      monk_task = monk()
+      none_task = extract_vocation('none', 'experience')
+      knight_task = extract_vocation('knight', 'experience')
+      paladin_task = extract_vocation('paladin', 'experience')
+      sorcerer_task = extract_vocation('sorcerer', 'experience')
+      druid_task = extract_vocation('druid', 'experience')
+      monk_task = extract_vocation('monk', 'experience')
 
       [none_task, knight_task, paladin_task, sorcerer_task, druid_task, monk_task]
 
