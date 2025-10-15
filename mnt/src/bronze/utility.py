@@ -102,7 +102,7 @@ class CSVBronze:
         logger.info(f"Arquivo salvo no MinIO: s3://{bucket_name}/{key}")
         return f"s3a://{bucket_name}/{key}"
 
-def validate_highscore_csv(df: pd.DataFrame, expected_columns=None, min_rows=1) -> bool:
+def validate_csv(df: pd.DataFrame, expected_columns=None, min_rows=1) -> bool:
     """
     Valida um DataFrame de Highscore antes de passar para Silver.
     

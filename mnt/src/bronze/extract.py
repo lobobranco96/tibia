@@ -258,7 +258,7 @@ class Vocation:
         return self.get_vocation_data(6)
 
 
-class Skills:
+class Category:
     """
     Classe responsável por coletar dados dos rankings (highscores) de habilidades no site oficial do Tibia.
 
