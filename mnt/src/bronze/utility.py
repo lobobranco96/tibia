@@ -10,7 +10,28 @@ import boto3
 from botocore.client import Config
 import pandas as pd
 
+
+# ==========================================================
+#  CONFIG GLOBAL - Variáveis de ambiente e logger
+# ==========================================================
 logger = logging.getLogger(__name__)
+
+S3_ENDPOINT = os.getenv("S3_ENDPOINT")
+ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+
+# Cria o client S3 global (MinIO)
+if not all([S3_ENDPOINT, ACCESS_KEY, SECRET_KEY]):
+    raise ValueError("S3 credentials missing: verifique variáveis de ambiente.")
+
+s3_client = boto3.client(
+    's3',
+    endpoint_url=S3_ENDPOINT,
+    aws_access_key_id=ACCESS_KEY,
+    aws_secret_access_key=SECRET_KEY,
+    config=Config(signature_version='s3v4'),
+    region_name='us-east-1'
+)
 
 def selenium_webdriver():
   """
@@ -38,27 +59,7 @@ class CSVBronze:
     (camada Bronze do Data Lake), particionando por data.
     """
 
-    def __init__(self, s3_endpoint, access_key, secret_key):
-
-        if not all([s3_endpoint, access_key, secret_key]):
-            raise ValueError(
-                "S3 credentials missing: verifique S3_ENDPOINT, AWS_ACCESS_KEY_ID e AWS_SECRET_ACCESS_KEY"
-            )
-
-        self.endpoint_url = s3_endpoint
-        self.access_key = access_key
-        self.secret_key = secret_key
-        
-
-        self.s3_client = boto3.client(
-            's3',
-            endpoint_url=s3_endpoint,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            config=Config(signature_version='s3v4'),
-            region_name='us-east-1'
-        )
-
+    def __init__(self):
         today = datetime.today()
         self.year = today.strftime("%Y")
         self.month = today.strftime("%m")

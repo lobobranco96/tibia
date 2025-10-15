@@ -1,5 +1,5 @@
 import logging
-from utility import selenium_webdriver
+from .utility import selenium_webdriver
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -89,7 +89,7 @@ class HighScore:
 
 
 
-class HighscoreVocation:
+class Vocation:
     """
     Classe que encapsula o scraping das tabelas de highscores por vocação e tipo de mundo no Tibia.
 
@@ -129,9 +129,9 @@ class HighscoreVocation:
 
     def __init__(self):
         """
-        Inicializa a classe HighscoreVocation com o driver Selenium e o template da URL base.
+        Inicializa a classe Vocation com o driver Selenium e o template da URL base.
         """
-        logger.info("Inicializando HighscoreVocation...")
+        logger.info("Inicializando Vocation...")
         selenium_driver = selenium_webdriver()
         self.table = HighScore(selenium_driver)
         self.BASE_URL = (
@@ -258,7 +258,7 @@ class HighscoreVocation:
         return self.get_vocation_data(6)
 
 
-class HighscoreSkills:
+class Skills:
     """
     Classe responsável por coletar dados dos rankings (highscores) de habilidades no site oficial do Tibia.
 
@@ -282,9 +282,9 @@ class HighscoreSkills:
 
     def __init__(self):
         """
-        Inicializa a classe HighscoreSkills com um driver Selenium e configura os parâmetros base de scraping.
+        Inicializa a classe Skills com um driver Selenium e configura os parâmetros base de scraping.
         """
-        logger.info("Inicializando HighscoreSkills...")
+        logger.info("Inicializando Skills...")
         selenium_driver = selenium_webdriver()
         self.table = HighScore(selenium_driver)
         self.BASE_URL = (
