@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from src.bronze_app import extract_vocation
+from src.bronze_app import extract_vocation, extract_category
 
 from airflow.decorators import dag, task
 from airflow.utils.task_group import TaskGroup
