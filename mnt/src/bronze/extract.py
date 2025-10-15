@@ -1,8 +1,9 @@
 import logging
-from .utility import selenium_webdriver
+import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-
+import time
+import random
 
 # Configuração básica de logging
 logging.basicConfig(
@@ -15,31 +16,24 @@ logger = logging.getLogger(__name__)
 
 class HighScore:
     """
-    Classe responsável por realizar o scraping de dados de uma tabela de Highscores
-    no site oficial do Tibia. Utiliza Selenium para carregar a página e BeautifulSoup
-    para extrair o conteúdo da tabela.
-
-    Attributes:
-        selenium_driver: Instância do webdriver Selenium configurada para navegação automatizada.
+    Classe responsável por realizar o scraping de dados da tabela de Highscores
+    no site oficial do Tibia. Utiliza `requests` para obter o HTML e `BeautifulSoup`
+    para extrair o conteúdo tabular.
     """
 
-    def __init__(self, selenium_webdriver):
-        """
-        Inicializa a classe HighScore com um driver Selenium ativo.
-
-        Args:
-            selenium_webdriver: Instância do webdriver (ex: Chrome, Firefox)
-                criada externamente para manipulação de páginas web.
-        """
-        self.selenium_driver = selenium_webdriver
-        logger.info("HighScore scraper inicializado com WebDriver.")
+    def __init__(self):
+        """Inicializa o scraper de highscores."""
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        }
+        logger.info("HighScore scraper inicializado.")
 
     def scraper(self, url):
         """
         Realiza o scraping de uma única página de highscores e retorna os dados em formato DataFrame.
 
-        O método carrega a página fornecida, localiza a tabela principal contendo as
-        informações de ranking e transforma os dados extraídos em um DataFrame do pandas.
+        Faz uma requisição HTTP à página especificada, identifica a tabela principal contendo
+        as informações de ranking e converte o conteúdo em um DataFrame do pandas.
 
         Args:
             url (str): URL da página de highscores a ser processada.
@@ -50,8 +44,8 @@ class HighScore:
         """
         logger.info(f"Acessando URL: {url}")
         try:
-            self.selenium_driver.get(url)
-            soup = BeautifulSoup(self.selenium_driver.page_source, "lxml")
+            response = requests.get(url, headers=self.headers, timeout=1)
+            soup = BeautifulSoup(response.content, "lxml")
 
             table_container = soup.find("table", class_="Table3")
             if not table_container:
@@ -129,11 +123,10 @@ class Vocation:
 
     def __init__(self):
         """
-        Inicializa a classe Vocation com o driver Selenium e o template da URL base.
+        Inicializa o scraper de highscores por vocação.
         """
         logger.info("Inicializando Vocation...")
-        selenium_driver = selenium_webdriver()
-        self.table = HighScore(selenium_driver)
+        self.table = HighScore()
         self.BASE_URL = (
             "https://www.tibia.com/community/?subtopic=highscores&world="
             "&beprotection=-1"
@@ -165,6 +158,9 @@ class Vocation:
                 dataframe = pd.concat([dataframe, result], ignore_index=True)
             else:
                 logger.warning(f"Nenhum dado encontrado em: {pagina}")
+
+            # Intervalo aleatório entre 1 e 3 segundos
+            time.sleep(random.uniform(1, 3))
 
         logger.info(f"Total de linhas processadas: {len(dataframe)}")
         return dataframe
@@ -263,7 +259,7 @@ class Category:
     Classe responsável por coletar dados dos rankings (highscores) de habilidades no site oficial do Tibia.
 
     Essa classe realiza o scraping das páginas de highscores por categoria (como sword fighting, magic level, etc.)
-    e por vocação (como Knight, Paladin, etc.), utilizando Selenium para carregar a página e BeautifulSoup para extrair os dados.
+    e por vocação (como Knight, Paladin, etc.)
 
     A coleta é feita de forma automatizada, iterando pelas páginas dos rankings e retornando os dados em um DataFrame do pandas.
 
@@ -285,8 +281,8 @@ class Category:
         Inicializa a classe Skills com um driver Selenium e configura os parâmetros base de scraping.
         """
         logger.info("Inicializando Skills...")
-        selenium_driver = selenium_webdriver()
-        self.table = HighScore(selenium_driver)
+
+        self.table = HighScore()
         self.BASE_URL = (
             "https://www.tibia.com/community/?subtopic=highscores&world="
             "&beprotection=-1"
@@ -335,6 +331,8 @@ class Category:
                 dataframe = pd.concat([dataframe, result], ignore_index=True)
             else:
                 logger.warning(f"Nenhum dado encontrado na página: {pagina}")
+            # Intervalo aleatório entre 1 e 3 segundos
+            time.sleep(random.uniform(1, 3))
 
         logger.info(f"Total de linhas coletadas: {len(dataframe)}")
         return dataframe

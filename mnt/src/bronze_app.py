@@ -1,45 +1,116 @@
 import os
-from bronze.utility import CSVBronze, validate_highscore_csv
-from bronze.extract import Vocation, Skills
 import logging
+from bronze.utility import CSVBronze, validate_csv
+from bronze.extract import Vocation, Category
 
-# Configuração básica de logging
+# ================================================================
+# Configuração de Logging
+# ================================================================
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] [%(levelname)s] - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
-
 logger = logging.getLogger(__name__)
 
+# ================================================================
+# Inicialização da Classe MinIO
+# ================================================================
+minio = CSVBronze()
+
+
+# ================================================================
+# Função: Extração por Vocação
+# ================================================================
 def extract_vocation(vocation: str) -> str:
-    # Config MinIO
-    category = 'experience'
-    valid_vocations = {
-        'none': 'no_vocation',
-        'knight': 'knight',
-        'paladin': 'paladin',
-        'sorcerer': 'sorcerer',
-        'druid': 'druid',
-        'monk': 'monk',
-    }
-    highscore = Vocation()
+    """
+    Extrai highscores de uma vocação específica e envia para o bucket 'bronze'.
 
-    method_name = valid_vocations.get(vocation.lower())
-    if method_name and hasattr(highscore, method_name):
-      method = getattr(highscore, method_name)
-      df = method()
+    Args:
+        vocation (str): Nome da vocação (none, knight, paladin, sorcerer, druid, monk)
 
-      # Validação mínima antes do upload
-      expected_columns = ["Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"]
-      if not validate_highscore_csv(df, expected_columns=expected_columns):
-          raise ValueError(f"Validação falhou para {method_name}")
+    Returns:
+        str: Caminho no MinIO onde o arquivo foi salvo ou None se falhar.
+    """
+    try:
+        category = "experience"
+        valid_vocations = {
+            "none": "no_vocation",
+            "knight": "knight",
+            "paladin": "paladin",
+            "sorcerer": "sorcerer",
+            "druid": "druid",
+            "monk": "monk",
+        }
 
-      minio = CSVBronze()
-      return minio.write(df, method_name, category, bucket_name="bronze")
-    else:
-      logger.info("Vocação inválida. Use: none, knight, paladin, sorcerer, druid ou monk.")
-      return None
+        vocation = vocation.lower().strip()
+        highscore = Vocation()
 
-def extract_skill():
-  pass
+        method_name = valid_vocations.get(vocation)
+        if method_name and hasattr(highscore, method_name):
+            method = getattr(highscore, method_name)
+            df = method()
+
+            expected_columns = ["Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"]
+            if not validate_csv(df, expected_columns=expected_columns):
+                raise ValueError(f"Validação falhou para {method_name}")
+
+            logger.info(f"Extração concluída para vocação '{vocation}'. Enviando ao MinIO...")
+            return minio.write(df, method_name, category, bucket_name="bronze")
+
+        else:
+            logger.warning("Vocação inválida. Use: none, knight, paladin, sorcerer, druid ou monk.")
+            return None
+
+    except Exception as e:
+        logger.error(f"Erro durante extração de vocação '{vocation}': {e}", exc_info=True)
+        return None
+
+
+# ================================================================
+# Função: Extração por Categoria
+# ================================================================
+def extract_category(category: str) -> str:
+    """
+    Extrai highscores de uma categoria (extra ou skills) e salva como CSV localmente.
+
+    Args:
+        category (str): Nome da categoria (achievements, fishing, axe, sword, etc.)
+
+    Returns:
+        str: Caminho local onde o arquivo foi salvo ou None se falhar.
+    """
+    try:
+        valid_extra = [
+            "achievements", "fishing", "loyalty", "drome", "boss", "charm", "goshnair"
+        ]
+
+        valid_skills = [
+            "axe", "sword", "club", "distance", "magic_level", "fist", "shielding"
+        ]
+
+        category = category.lower().strip()
+        highscore = Category()
+
+        if category in valid_extra:
+            category_dir = "extra"
+        elif category in valid_skills:
+            category_dir = "skills"
+        else:
+            logger.warning(
+                f"Categoria inválida: {category}. "
+                "Use uma das seguintes opções:\n"
+                "Extras: achievements, fishing, loyalty, drome, boss, charm, goshnair\n"
+                "Skills: axe, sword, club, distance, magic_level, fist, shielding"
+            )
+            return None
+
+        logger.info(f"Extraindo categoria '{category}' ({category_dir})...")
+
+        df = highscore.get_by_category(category)
+
+        return minio.write(df, category, category_dir, bucket_name="bronze")
+        
+    except Exception as e:
+        logger.error(f"Erro durante extração da categoria '{category}': {e}", exc_info=True)
+        return None
