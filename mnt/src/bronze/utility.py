@@ -38,8 +38,16 @@ class CSVBronze:
     def __init__(self):
         self.today = datetime.today()
         
+        self.s3_client = boto3.client(
+            's3',
+            endpoint_url=S3_ENDPOINT,
+            aws_access_key_id=ACCESS_KEY,
+            aws_secret_access_key=SECRET_KEY,
+            config=Config(signature_version='s3v4'),
+            region_name='us-east-1'
+        )
 
-    def write(self, df, category, dataset_name, bucket_name="bronze"):
+    def write(self, df, category_dir, dataset_name, bucket_name="bronze"):
         """
         Escreve o DataFrame como CSV na camada Bronze do MinIO particionado por data.
 
@@ -58,11 +66,9 @@ class CSVBronze:
             sep=";", 
             index=False)
 
-        date = f"year={self.today:%Y}", f"month={self.today:%m}", f"day={self.today:%d}"
-        key = (f"{date}/"
-              f"{category}/"
-              f"{dataset_name}.csv"
-              )
+        date = f"year={self.today:%Y}/month={self.today:%m}/day={self.today:%d}"
+        key = f"{date}/{category_dir}/{dataset_name}.csv"
+              
 
         # Upload no MinIO
         self.s3_client.put_object(
