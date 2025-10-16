@@ -1,7 +1,7 @@
 import os
 import logging
-from bronze.utility import CSVBronze, validate_csv
-from bronze.extract import Vocation, Category
+from src.bronze.utility import CSVBronze, validate_csv
+from src.bronze.extract import Vocation, Category
 
 # ================================================================
 # Configuração de Logging
@@ -55,8 +55,13 @@ def extract_vocation(vocation: str) -> str:
             if not validate_csv(df, expected_columns=expected_columns):
                 raise ValueError(f"Validação falhou para {method_name}")
 
+
+
             logger.info(f"Extração concluída para vocação '{vocation}'. Enviando ao MinIO...")
-            return minio.write(df, method_name, category, bucket_name="bronze")
+            category_dir = "experience"
+            dataset_name = method_name
+            
+            return minio.write(df, category_dir, dataset_name, bucket_name="bronze")
 
         else:
             logger.warning("Vocação inválida. Use: none, knight, paladin, sorcerer, druid ou monk.")
@@ -108,8 +113,9 @@ def extract_category(category: str) -> str:
         logger.info(f"Extraindo categoria '{category}' ({category_dir})...")
 
         df = highscore.get_by_category(category)
+        dataset_name = category
 
-        return minio.write(df, category, category_dir, bucket_name="bronze")
+        return minio.write(df, category_dir, dataset_name, bucket_name="bronze")
         
     except Exception as e:
         logger.error(f"Erro durante extração da categoria '{category}': {e}", exc_info=True)
