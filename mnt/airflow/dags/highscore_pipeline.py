@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.utils.task_group import TaskGroup
+from airflow.operators.empty import EmptyOperator
 from src.bronze_app import extract_vocation, extract_category
 
 
@@ -14,7 +15,6 @@ default_args = {
     dag_id="tibia_highscores_pipeline",
     description="Pipeline de extração e transformação de highscores do Tibia",
     default_args=default_args,
-    schedule_interval=None,
     start_date=datetime(2025, 10, 15),
     catchup=False,
     tags=["tibia", "lakehouse", "etl"]
@@ -70,7 +70,7 @@ def highscore_pipeline():
 
         @task
         def extract_magic():
-            return extract_category("magic")
+            return extract_category("magic_level")
 
         @task
         def extract_club():
@@ -139,6 +139,8 @@ def highscore_pipeline():
 
     # Dependências
 
-    [extract_vocation_group, extract_skills_group, extract_extra_group]
+    end = EmptyOperator(task_id="end")
+
+    [extract_vocation_group, extract_skills_group, extract_extra_group] >> end
 
 highscore = highscore_pipeline()
