@@ -161,6 +161,7 @@ class Vocation:
 
             # Intervalo aleatório entre 1 e 3 segundos
             time.sleep(random.uniform(1, 3))
+            
 
         logger.info(f"Total de linhas processadas: {len(dataframe)}")
         return dataframe
