@@ -30,17 +30,15 @@ x-airflow-common:
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     # Limites internos do scheduler
-    AIRFLOW__SCHEDULER__MAX_THREADS: 2   
-    AIRFLOW__CORE__PARALLELISM: 4    
-    AIRFLOW__CORE__DAG_CONCURRENCY: 1 
+    AIRFLOW__SCHEDULER__MAX_THREADS: 2
+    AIRFLOW__CORE__PARALLELISM: 4
+    AIRFLOW__CORE__DAG_CONCURRENCY: 2
   volumes:
     - ../mnt/airflow/dags:/opt/airflow/dags
     - ../mnt/airflow/logs:/opt/airflow/logs
     - ../mnt/airflow/config:/opt/airflow/config
     - ../mnt/airflow/plugins:/opt/airflow/plugins
     - ../mnt/src:/opt/airflow/dags/src
-    - ../mnt/spark:/opt/airflow/dags/spark
-
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
