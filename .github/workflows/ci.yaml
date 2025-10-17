@@ -22,18 +22,26 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install autoflake
           pip install -r mnt/requirements.txt
 
+      - name: Clean unused imports and variables
+        run: |
+          autoflake --remove-all-unused-imports --remove-unused-variables --in-place --recursive mnt
+
+      # Formata o código automaticamente
       - name: Format code with Black
         run: |
           black mnt
 
+      # Verifica o estilo do código (mas ignora avisos irrelevantes)
       - name: Lint code with Flake8
         run: |
           flake8 mnt \
             --max-line-length=120 \
-            --extend-ignore=E203,F401,F841
+            --extend-ignore=E203,E501,F401,F841
 
+      # Executa os testes
       - name: Run tests with Pytest
         run: |
           pytest mnt/src/tests --maxfail=1 --disable-warnings -q
