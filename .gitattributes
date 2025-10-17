@@ -1,0 +1,11 @@
+# Ignorar arquivos de documentação que estão sendo classificados como Roff
+*.1 linguist-documentation
+*.man linguist-documentation
+
+# Se você souber quais diretórios/arquivos estão causando o problema, pode ser mais direto
+docs/** linguist-documentation
+man/** linguist-documentation
+
+# Garantir que Python e Dockerfile sejam considerados
+*.py linguist-language=Python
+Dockerfile linguist-language=Dockerfile

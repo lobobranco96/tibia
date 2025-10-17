@@ -48,6 +48,8 @@ class CSVBronze:
         )
 
     def write(self, df, category_dir, dataset_name, bucket_name="bronze"):
+    #def write(self, df, category_dir, dataset_name, bucket_name="bronze",
+    #          save_local_copy=True, delete_after_upload=True, local_path_base="/tmp"):
         """
         Escreve o DataFrame como CSV na camada Bronze do MinIO particionado por data.
 
