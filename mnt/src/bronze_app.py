@@ -1,4 +1,3 @@
-import os
 import logging
 from src.bronze.utility import CSVBronze, validate_csv
 from src.bronze.extract import Vocation, Category
@@ -33,7 +32,6 @@ def extract_vocation(vocation: str) -> str:
         str: Caminho no MinIO onde o arquivo foi salvo ou None se falhar.
     """
     try:
-        category = "experience"
         valid_vocations = {
             "none": "no_vocation",
             "knight": "knight",
