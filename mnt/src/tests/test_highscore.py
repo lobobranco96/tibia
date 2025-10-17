@@ -1,4 +1,3 @@
-import pytest
 import pandas as pd
 import os
 from bronze.extract import HighScore
