@@ -14,7 +14,7 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
 ```text
           +-----------------------------+
           |  Web Scraping (Python)      |
-          |  Selenium + BeautifulSoup   |
+          |  Requests + BeautifulSoup   |
           +-------------+---------------+
                         |
                         v
@@ -52,8 +52,8 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
 
 | Camada | Tecnologias | Descrição |
 |--------|--------------|------------|
-| **Coleta (Ingestão)** | **Python (Selenium, BeautifulSoup)** | Automação e raspagem de dados web para coleta de informações brutas. |
-| **Armazenamento (Raw/Bronze)** | **MinIO (S3-compatible)** | Data Lake para armazenamento dos dados brutos, intermediários e processados. |
+| **Coleta (Ingestão)** | **Python (Requests, BeautifulSoup)** | Automação e raspagem de dados web para coleta de informações brutas. |
+| **Armazenamento (Bronze)** | **MinIO (S3-compatible)** | Data Lake para armazenamento dos dados brutos |
 | **Processamento (Silver/Gold)** | **Apache Spark Cluster** | Processamento distribuído e transformação dos dados. |
 |  | **Apache Iceberg** | Formato de tabela transacional com versionamento, schema evolution e time travel. |
 |  | **Nessie Data Catalog** | Controle de versões e governança dos dados (Git para tabelas). |
