@@ -61,7 +61,13 @@ def extract_vocation(vocation: str) -> str:
             category_dir = "experience"
             dataset_name = method_name
             
-            return minio.write(df, category_dir, dataset_name, bucket_name="bronze")
+            return minio \
+            .write(df,
+            category_dir,
+            dataset_name,
+            bucket_name="bronze",
+            save_local_copy=True,
+            delete_after_upload=True)
 
         else:
             logger.warning("Vocação inválida. Use: none, knight, paladin, sorcerer, druid ou monk.")
@@ -115,7 +121,13 @@ def extract_category(category: str) -> str:
         df = highscore.get_by_category(category)
         dataset_name = category
 
-        return minio.write(df, category_dir, dataset_name, bucket_name="bronze")
+        return minio \
+            .write(df,
+            category_dir,
+            dataset_name,
+            bucket_name="bronze",
+            save_local_copy=True,
+            delete_after_upload=True)
         
     except Exception as e:
         logger.error(f"Erro durante extração da categoria '{category}': {e}", exc_info=True)
