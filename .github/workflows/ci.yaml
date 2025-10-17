@@ -19,7 +19,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -r ../mnt/requirements.txt
+        run: |
+          pip install -r mnt/requirements.txt
 
       - name: Checkar a formatação do codigo
         run: |
@@ -28,7 +29,6 @@ jobs:
       - name: Run lint
         run: flake8 .
 
-      - name: Rodar testes com Pytest
+      - name: Run tests
         run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)/mnt
-          pytest
+          pytest --maxfail=1 --disable-warnings -q
