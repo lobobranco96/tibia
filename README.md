@@ -116,6 +116,78 @@ Exemplo de DataFrame final:
   - Prometheus + Grafana monitoram performance e saúde do pipeline.
 
 ---
+## Estrutura do projeto
+
+```bash
+├── docker
+│   ├── airflow
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   ├── notebook
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   ├── prometheus
+│   │   └── prometheus.yaml
+│   └── spark
+│       └── Dockerfile
+├── Makefile
+├── mnt
+│   ├── airflow
+│   │   └── dags
+│   │       └── highscore_pipeline.py
+│   ├── minio
+│   │   └── bronze
+│   │       └── year=2025
+│   │           └── month=10
+│   │               └── day=16
+│   │                   ├── experience
+│   │                   │   ├── druid.csv
+│   │                   │   ├── knight.csv
+│   │                   │   ├── monk.csv
+│   │                   │   ├── no_vocation.csv
+│   │                   │   ├── paladin.csv
+│   │                   │   └── sorcerer.csv
+│   │                   ├── extra
+│   │                   │   ├── achievements.csv
+│   │                   │   ├── boss.csv
+│   │                   │   ├── charm.csv
+│   │                   │   ├── drome.csv
+│   │                   │   ├── fishing.csv
+│   │                   │   ├── goshnair.csv
+│   │                   │   └── loyalty.csv
+│   │                   └── skills
+│   │                       ├── axe.csv
+│   │                       ├── club.csv
+│   │                       ├── distance.csv
+│   │                       ├── shielding.csv
+│   │                       └── sword.csv
+│   ├── notebooks
+│   ├── requirements.txt
+│   └── src
+│       ├── bronze
+│       │   ├── bronze_app.py
+│       │   ├── extract.py
+│       │   ├── __init__.py
+│       │   └── utility.py
+│       ├── gold
+│       │   └── gold_app.py
+│       ├── silver
+│       │   └── silver_app.py
+│       └── tests
+│           ├── html
+│           │   └── highscore_page.html
+│           ├── __init__.py
+│           ├── test_category.py
+│           ├── test_highscore.py
+│           └── test_vocation.py
+├── README.md
+└── services
+    ├── lakehouse.yaml
+    ├── observability.yaml
+    ├── orchestration.yaml
+    ├── processing.yaml
+    └── visualization.yaml
+```
 
 ## EM CONSTRUÇÃO
 
