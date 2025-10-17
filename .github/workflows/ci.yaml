@@ -44,4 +44,5 @@ jobs:
       # Executa os testes
       - name: Run tests with Pytest
         run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/mnt/src
           pytest mnt/src/tests --maxfail=1 --disable-warnings -q
