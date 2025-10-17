@@ -47,6 +47,21 @@ Ela contém todos os scripts que realizam web scraping, tratamento inicial de da
     - extract_category(category: str) -> str
       - Extrai highscores de uma categoria (extra ou skills) e envia para o MinIO.
       - Retorna o caminho do arquivo no MinIO ou None em caso de falha.
+        
+
+    ```txt
+      from bronze_app import extract_vocation, extract_category
+    
+      # Extrair highscores dos Knights
+      extract_vocation("druid")
+      
+      # Extrair highscores de Sword Fighting
+      extract_category("sword")
+
+      # Extrair highscore extra
+      extract_category("achievements")
+    ```
+
 ---
 
 ## Camada Silver
