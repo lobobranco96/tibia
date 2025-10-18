@@ -83,6 +83,10 @@ def highscore_pipeline():
         @task
         def extract_shielding():
             return extract_category("shielding")
+        
+        @task
+        def extract_fist():
+            return extract_category("fist")
 
         [
             extract_axe(),
@@ -91,6 +95,7 @@ def highscore_pipeline():
             extract_club(),
             extract_distance(),
             extract_shielding(),
+            extract_fist()
         ]
 
     # ============================================================
