@@ -1,6 +1,6 @@
 import logging
-from utility import CSVBronze, validate_csv
-from extract import Vocation, Category
+from .utility import CSVBronze, validate_csv
+from .extract import Vocation, Category
 
 # ================================================================
 # Configuração de Logging
