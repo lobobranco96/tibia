@@ -298,7 +298,7 @@ class Category:
             "sword": (13, "Sword Fighting", 2),
             "club": (4, "Club Fighting", 2),
             "distance": (5, "Distance Fighting", 3),
-            "magic": (11, "Magic Level", 4),
+            "magic_level": (11, "Magic Level", 4),
             "fist": (8, "Fist Fighting", 0),
             "shielding": (12, "Shielding", 0),
             "fishing": (7, "Fishing", 0),
