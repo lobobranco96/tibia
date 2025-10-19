@@ -1,5 +1,5 @@
 import logging
-from .utility import CSVBronze, validate_csv
+from .utility import CSVLanding, validate_csv
 from .extract import Vocation, Category
 
 # ================================================================
@@ -13,10 +13,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ================================================================
-# Inicialização da Classe MinIO
+# Inicialização da Classe CSVLanding
 # ================================================================
-minio = CSVBronze()
-
+landing_data = CSVLanding()
 
 # ================================================================
 # Função: Extração por Vocação
@@ -59,13 +58,10 @@ def extract_vocation(vocation: str) -> str:
             category_dir = "experience"
             dataset_name = method_name
             
-            return minio \
+            return landing_data \
             .write(df,
             category_dir,
-            dataset_name,
-            bucket_name="bronze",
-            save_local_copy=True,
-            delete_after_upload=True)
+            dataset_name)
 
         else:
             logger.warning("Vocação inválida. Use: none, knight, paladin, sorcerer, druid ou monk.")
@@ -119,13 +115,10 @@ def extract_category(category: str) -> str:
         df = highscore.get_by_category(category)
         dataset_name = category
 
-        return minio \
+        return landing_data \
             .write(df,
             category_dir,
-            dataset_name,
-            bucket_name="bronze",
-            save_local_copy=True,
-            delete_after_upload=True)
+            dataset_name)
         
     except Exception as e:
         logger.error(f"Erro durante extração da categoria '{category}': {e}", exc_info=True)
