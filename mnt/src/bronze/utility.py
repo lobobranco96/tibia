@@ -20,7 +20,20 @@ class CSVLanding:
 
     def __init__(self, base_dir="/mnt/minio/landing"):
         self.today = datetime.today()
-        self.base_dir = base_dir
+
+        if base_dir is None:
+            # Caminho do diretório onde está o script atual (ex: src/bronze/)
+            current_file_dir = os.path.dirname(os.path.abspath(__file__))
+
+            # Caminho relativo até mnt/minio/landing/
+            self.base_dir = os.path.abspath(
+                os.path.join(current_file_dir, "..", "..", "mnt", "minio", "landing")
+            )
+        else:
+            self.base_dir = base_dir
+
+        # Garante que o diretório base exista
+        os.makedirs(self.base_dir, exist_ok=True)
 
     def write(self, df, category_dir, dataset_name, delete_old=True):
         """
