@@ -38,10 +38,12 @@ services:
         sleep 5;
       done;
       echo 'MinIO está pronto. Iniciando configuração dos buckets.';
+      mc mb myminio/landing;
       mc mb myminio/bronze;
       mc mb myminio/silver;
       mc mb myminio/gold;
       echo 'Buckets criados com sucesso.';
+      mc anonymous set public myminio/landing;
       mc anonymous set public myminio/bronze;
       mc anonymous set public myminio/silver;
       mc anonymous set public myminio/gold;
