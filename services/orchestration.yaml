@@ -39,6 +39,8 @@ x-airflow-common:
     - ../mnt/airflow/config:/opt/airflow/config
     - ../mnt/airflow/plugins:/opt/airflow/plugins
     - ../mnt/src:/opt/airflow/dags/src
+    - ../mnt/minio:/mnt/minio
+
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
