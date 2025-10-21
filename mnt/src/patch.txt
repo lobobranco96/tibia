@@ -1,0 +1,13 @@
+Historico de mudanças:
+
+
+21/10
+  - extract.py: Adicionado ao Vocation().processar_paginas() e Category.processar_paginas(), retries
+na tentativa de coletar os dados e falhar por timeout.
+  - utility.py: fix CSVLanding, a forma em que o csv é salvo no diretorio minio/landing
+  - Refatorando a logica entre Landing e Bronze. Agora os scripts que faz a coleta dos dados faz parte da camada landing
+
+  - tests/: mudança na importação dos modulos, bronze. >> .landing
+  - landing_app: documentaçao
+  - highscore_pipeline.py: fix importação from src.landing.landing_app
+  
