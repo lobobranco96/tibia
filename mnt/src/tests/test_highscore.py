@@ -24,7 +24,7 @@ def test_scraper_mock_from_file(monkeypatch):
         return MockResponse(html_content)
 
     # Patch requests.get
-    monkeypatch.setattr("bronze.extract.requests.get", mock_get)
+    monkeypatch.setattr("landing.extract.requests.get", mock_get)
 
     # Chama o scraper (URL qualquer, será ignorado pelo mock)
     df = highscore.scraper("http://fakeurl.com")
