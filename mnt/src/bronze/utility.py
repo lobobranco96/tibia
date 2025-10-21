@@ -18,24 +18,14 @@ class CSVLanding:
     particionando por data (year/month/day).
     """
 
-    def __init__(self, base_dir="/mnt/minio/landing"):
+    def __init__(self):
         self.today = datetime.today()
 
-        if base_dir is None:
-            # Caminho do diretório onde está o script atual (ex: src/bronze/)
-            current_file_dir = os.path.dirname(os.path.abspath(__file__))
+        self.base_dir = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..", "minio", "landing")
+        )
 
-            # Caminho relativo até mnt/minio/landing/
-            self.base_dir = os.path.abspath(
-                os.path.join(current_file_dir, "..", "..", "mnt", "minio", "landing")
-            )
-        else:
-            self.base_dir = base_dir
-
-        # Garante que o diretório base exista
-        os.makedirs(self.base_dir, exist_ok=True)
-
-    def write(self, df, category_dir, dataset_name, delete_old=True):
+    def write(self, df, category_dir, dataset_name):
         """
         Salva um DataFrame como CSV localmente na estrutura de partições de data.
 
@@ -54,33 +44,22 @@ class CSVLanding:
             # s3_path -> 's3a://landing/year=2025/month=10/day=17/experience/druid.csv'
         """
         
-        partition_path = os.path.join(
+        partition = f"year={self.today:%Y}/month={self.today:%m}/day={self.today:%d}"
+
+        landing_path = os.path.join(
             self.base_dir,
-            f"year={self.today:%Y}",
-            f"month={self.today:%m}",
-            f"day={self.today:%d}",
+            partition,
             category_dir
         )
         
-        os.makedirs(partition_path, exist_ok=True)
+        os.makedirs(landing_path, exist_ok=True)
 
-        full_path = os.path.join(partition_path, f"{dataset_name}.csv")
-
-        # (Opcional) Remove CSVs antigos da mesma categoria/dataset no mesmo dia
-        if delete_old:
-            for fname in os.listdir(partition_path):
-                if fname.startswith(dataset_name) and fname.endswith(".csv"):
-                    try:
-                        os.remove(os.path.join(partition_path, fname))
-                    except Exception as e:
-                        logger.warning(f"Falha ao remover arquivo antigo: {fname} - {e}")
-
-        # Salva o CSV
-        df.to_csv(full_path, sep=";", index=False, encoding="utf-8")
-        logger.info(f"Arquivo salvo na camada Landing: {full_path}")
+        file_path = os.path.join(landing_path, f"{dataset_name}.csv")
+        df.to_csv(file_path, index=False, encoding="utf-8")
+        logger.info(f"Arquivo salvo na camada Landing: {file_path}")
 
         return {
-          "path": full_path,
+          "path": file_path,
           "rows": len(df),
           "columns": df.columns.tolist(),
           "timestamp": datetime.now().isoformat()

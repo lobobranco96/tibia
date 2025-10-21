@@ -137,12 +137,15 @@ class Vocation:
         )
         logger.info("HighscoreVocation inicializado com sucesso.")
 
-    def processar_paginas(self, lista_paginas):
+    def processar_paginas(self, lista_paginas, retries=1, wait_time=3):
         """
         Itera sobre uma lista de URLs e concatena os resultados de todas as páginas em um único DataFrame.
+        Em caso de erro ou ausência de dados, realiza nova tentativa após aguardar um tempo.
 
         Args:
             lista_paginas (list): Lista contendo as URLs das páginas de highscores.
+            retries (int): Número de tentativas extras em caso de falha.
+            wait_time (int): Tempo (em segundos) de espera antes da nova tentativa.
 
         Returns:
             pandas.DataFrame: DataFrame consolidado com os resultados de todas as páginas.
@@ -152,16 +155,36 @@ class Vocation:
 
         for pagina in lista_paginas:
             logger.debug(f"Processando página: {pagina}")
-            result = self.table.scraper(pagina)
-            if isinstance(result, pd.DataFrame) and not result.empty:
-                logger.debug(f"{len(result)} linhas extraídas.")
-                dataframe = pd.concat([dataframe, result], ignore_index=True)
-            else:
-                logger.warning(f"Nenhum dado encontrado em: {pagina}")
+            attempt = 0
+            result = None
 
-            # Intervalo aleatório entre 1 e 3 segundos
+            while attempt <= retries:
+                try:
+                    result = self.table.scraper(pagina)
+
+                    # Verifica se o scraper retornou dados válidos
+                    if isinstance(result, pd.DataFrame) and not result.empty:
+                        logger.debug(f"{len(result)} linhas extraídas da página.")
+                        dataframe = pd.concat([dataframe, result], ignore_index=True)
+                        break  # Sai do loop se deu certo
+                    else:
+                        raise ValueError("Nenhum dado encontrado")
+
+                except Exception as e:
+                    attempt += 1
+                    logger.error(
+                        f"Erro ao processar a página {pagina} (tentativa {attempt}/{retries + 1}): {e}"
+                    )
+
+                    # Se ainda restam tentativas, espera um pouco antes de tentar novamente
+                    if attempt <= retries:
+                        logger.info(f"Aguardando {wait_time} segundos antes de nova tentativa...")
+                        time.sleep(wait_time)
+                    else:
+                        logger.warning(f"Falha definitiva ao processar {pagina} após {retries + 1} tentativas.")
+
+            # Intervalo aleatório entre páginas
             time.sleep(random.uniform(1, 3))
-            
 
         logger.info(f"Total de linhas processadas: {len(dataframe)}")
         return dataframe
@@ -311,31 +334,56 @@ class Category:
 
         logger.info("HighscoreSkills inicializado com sucesso.")
 
-    def processar_paginas(self, lista_paginas):
+    def processar_paginas(self, lista_paginas, retries=1, wait_time=3):
         """
-        Itera sobre uma lista de URLs e concatena os dados extraídos de cada página em um único DataFrame.
+        Itera sobre uma lista de URLs e concatena os resultados de todas as páginas em um único DataFrame.
+        Em caso de erro ou ausência de dados, realiza nova tentativa após aguardar um tempo.
 
         Args:
-            lista_paginas (list): Lista de URLs de páginas de highscores.
+            lista_paginas (list): Lista contendo as URLs das páginas de highscores.
+            retries (int): Número de tentativas extras em caso de falha.
+            wait_time (int): Tempo (em segundos) de espera antes da nova tentativa.
 
         Returns:
-            pandas.DataFrame: DataFrame contendo todos os dados combinados.
+            pandas.DataFrame: DataFrame consolidado com os resultados de todas as páginas.
         """
-        logger.info(f"Processando {len(lista_paginas)} páginas de highscores.")
+        logger.info(f"Iniciando processamento de {len(lista_paginas)} páginas.")
         dataframe = pd.DataFrame()
 
         for pagina in lista_paginas:
-            logger.debug(f"Scraping da página: {pagina}")
-            result = self.table.scraper(pagina)
-            if isinstance(result, pd.DataFrame) and not result.empty:
-                logger.debug(f"{len(result)} linhas coletadas da página.")
-                dataframe = pd.concat([dataframe, result], ignore_index=True)
-            else:
-                logger.warning(f"Nenhum dado encontrado na página: {pagina}")
-            # Intervalo aleatório entre 1 e 3 segundos
+            logger.debug(f"Processando página: {pagina}")
+            attempt = 0
+            result = None
+
+            while attempt <= retries:
+                try:
+                    result = self.table.scraper(pagina)
+
+                    # Verifica se o scraper retornou dados válidos
+                    if isinstance(result, pd.DataFrame) and not result.empty:
+                        logger.debug(f"{len(result)} linhas extraídas da página.")
+                        dataframe = pd.concat([dataframe, result], ignore_index=True)
+                        break  # Sai do loop se deu certo
+                    else:
+                        raise ValueError("Nenhum dado encontrado")
+
+                except Exception as e:
+                    attempt += 1
+                    logger.error(
+                        f"Erro ao processar a página {pagina} (tentativa {attempt}/{retries + 1}): {e}"
+                    )
+
+                    # Se ainda restam tentativas, espera um pouco antes de tentar novamente
+                    if attempt <= retries:
+                        logger.info(f"Aguardando {wait_time} segundos antes de nova tentativa...")
+                        time.sleep(wait_time)
+                    else:
+                        logger.warning(f"Falha definitiva ao processar {pagina} após {retries + 1} tentativas.")
+
+            # Intervalo aleatório entre páginas
             time.sleep(random.uniform(1, 3))
 
-        logger.info(f"Total de linhas coletadas: {len(dataframe)}")
+        logger.info(f"Total de linhas processadas: {len(dataframe)}")
         return dataframe
 
     def get_data(self, category_id, category_name, vocation_id):
