@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from airflow.decorators import dag, task
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
-from src.bronze.bronze_app import extract_vocation, extract_category
+from src.landing.landing_app import extract_vocation, extract_category
 
 
 default_args = {
