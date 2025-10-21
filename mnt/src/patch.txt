@@ -10,4 +10,6 @@ na tentativa de coletar os dados e falhar por timeout.
   - tests/: mudança na importação dos modulos, bronze. >> .landing
   - landing_app: documentaçao
   - highscore_pipeline.py: fix importação from src.landing.landing_app
-  
+  - adicionado script pyspark para bronze:
+    - vocation com iceberg e nessie
+  - funcao modular para criacao de spark session
