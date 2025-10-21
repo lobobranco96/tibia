@@ -1,8 +1,8 @@
 # Estrutura da Pasta `src`
 
-Este diretório contém toda a lógica de código-fonte do projeto, organizada em camadas do pipeline de dados (padrão Lakehouse).
+- Este diretório contém toda a lógica de código-fonte do projeto, organizada em camadas do pipeline de dados (padrão Lakehouse).
+- Contem  todos os scripts que realizam web scraping, tratamento inicial de dados e salvamento em MinIO ou S3-style storage, preparando os dados para serem processados nas camadas Silver e Gold.
 
-Ela contém todos os scripts que realizam web scraping, tratamento inicial de dados e salvamento em MinIO ou S3-style storage, preparando os dados para serem processados nas camadas Silver e Gold.
 ---
 
 ## Camada landing
