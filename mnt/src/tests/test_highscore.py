@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from bronze.extract import HighScore
+from landing.extract import HighScore
 
 # Caminho do arquivo HTML local
 HTML_FILE = os.path.join(os.path.dirname(__file__), "html/highscore_page.html")

@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from bronze.extract import Vocation
+from landing.extract import Vocation
 
 # ============================================================
 # MOCK DATAFRAME — representa o retorno de uma página HTML real
