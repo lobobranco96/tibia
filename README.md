@@ -31,6 +31,12 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
                         v
              +----------+----------+
              |  MinIO (Data Lake)  |
+             |  Landing Layer      |
+             +----------+----------+
+                        |
+                        v
+             +----------+----------+
+             |  MinIO (Data Lake)  |
              |  Bronze Layer       |
              +----------+----------+
                         |
@@ -64,8 +70,8 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
 | Camada | Tecnologias | Descrição |
 |--------|--------------|------------|
 | **Coleta (Ingestão)** | **Python (Requests, BeautifulSoup)** | Automação e raspagem de dados web para coleta de informações brutas. |
-| **Armazenamento (Bronze)** | **MinIO (S3-compatible)** | Data Lake para armazenamento dos dados brutos |
-| **Processamento (Silver/Gold)** | **Apache Spark Cluster** | Processamento distribuído e transformação dos dados. |
+| **Armazenamento (Landing)** | **MinIO (S3-compatible)** | Data Lake para armazenamento dos dados brutos |
+| **Processamento (Bronze/Silver/Gold)** | **Apache Spark Cluster** | Processamento distribuído e transformação dos dados. |
 |  | **Apache Iceberg** | Formato de tabela transacional com versionamento, schema evolution e time travel. |
 |  | **Nessie Data Catalog** | Controle de versões e governança dos dados (Git para tabelas). |
 | **Orquestração** | **Apache Airflow** | Coordena o pipeline de ponta a ponta (scraping → transformação → carga → dashboards). |
@@ -82,12 +88,7 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
   - Categorias extras: achievements, fishing, loyalty, drome, boss, charm, goshnair.
   - Skills: axe, sword, club, distance, magic_level, fist, shielding.
   - Falhas em uma task não afetam as demais, permitindo paralelismo e rastreabilidade.
-  - Fluxo Interno:
-    - Gerar URLs de scraping para todas as páginas e tipos de mundo.
-    - Extrair dados via Requests/BeautifulSoup.
-    - Transformar os dados em DataFrame.
-    - Concatenar dados por mundo e página.
-    - Salvar em MinIO via CSVBronze (camada Bronze).
+  - Salvar em MinIO via CSVLanding (camada landing).
 
 Exemplo de DataFrame final:
 
@@ -101,7 +102,7 @@ Exemplo de DataFrame final:
 
 
 ### 2. Camada Bronze:
-  - Armazena os dados brutos extraídos, particionados por year/month/day e por categoria.
+  - Criação das tabelas iceberg.
   - Garantia de auditabilidade e histórico completo de dados.
 
 ### 3. Camada Silver:
