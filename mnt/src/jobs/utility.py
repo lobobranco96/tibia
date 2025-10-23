@@ -16,10 +16,10 @@ def create_spark_session(appname):
       .setAppName(appname)
       .set("spark.master", master)
       .set("spark.sql.extensions","org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
-      .set("spark.executor.memory", "2g")
-      .set("spark.executor.cores", "2")
+      .set("spark.executor.memory", "512m")
+      .set("spark.executor.cores", "1")
+      .set("spark.driver.memory", "512m")
       .set("spark.executor.instances", "1")
-      .set("spark.driver.memory", "2g")
       .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
       .set("spark.sql.catalog.nessie.s3.path-style-access", "true")
       .set("spark.sql.catalog.nessie.s3.endpoint", S3_ENDPOINT)
@@ -41,3 +41,4 @@ def create_spark_session(appname):
 
 
   return spark
+
