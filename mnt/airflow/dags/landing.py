@@ -12,14 +12,14 @@ default_args = {
 }
 
 @dag(
-    dag_id="tibia_highscores_pipeline",
-    description="Pipeline de extração e transformação de highscores do Tibia",
+    dag_id="landing_highscores_pipeline",
+    description="Pipeline de extração de Pagina highscores do Tibia",
     default_args=default_args,
     start_date=datetime(2025, 10, 15),
     catchup=False,
-    tags=["tibia", "lakehouse", "etl"]
+    tags=["tibia", "extract"]
 )
-def highscore_pipeline():
+def landing_highscores_pipeline():
 
     # TaskGroup: EXTRAÇÃO DE VOCAÇÕES
     with TaskGroup(group_id="extract_vocation") as extract_vocation_group:
@@ -148,4 +148,4 @@ def highscore_pipeline():
 
     [extract_vocation_group, extract_skills_group, extract_extra_group] >> end
 
-highscore = highscore_pipeline()
+landing = landing_highscores_pipeline()

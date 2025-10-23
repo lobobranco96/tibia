@@ -115,7 +115,55 @@ Exemplo de DataFrame final:
   - Dremio permite consultas SQL sobre as tabelas Iceberg versionadas.
   - Streamlit dashboards exibem rankings, skills e evolução histórica.
   - Prometheus + Grafana monitoram performance e saúde do pipeline.
+    
+---
 
+## Orchestração com Apache Airflow
+O projeto utiliza duas DAGs principais para gerenciar o fluxo completo de dados, garantindo que a extração e o processamento sejam organizados, escaláveis e rastreáveis.
+
+### 1 - DAG de Extração e Ingestão (landing_highscores_pipeline)
+Objetivo: Coletar dados brutos do Tibia, por vocação, skills e categorias extras, e salvar na camada Landing (MinIO/S3) como CSVs particionados por data.
+Detalhes de execução:
+   - Cada vocação e categoria possui uma task independente, permitindo execução paralela.
+   - Falhas em uma task não interrompem as demais, garantindo robustez.
+   - Após a extração, os dados ficam prontos para processamento na camada Bronze.
+   - 
+Camadas envolvidas: Landing → Bronze (pré-processamento inicial, validação e organização dos CSVs).
+Exemplo de tasks:
+   - extract_vocation (none, knight, paladin, sorcerer, druid, monk)
+   - extract_skills (axe, sword, club, distance, magic_level, fist, shielding)
+   - extract_extra (achievements, fishing, loyalty, drome, boss, charm, goshnair)
+
+Output: Arquivos CSV no MinIO organizados por:
+```bash
+s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<nome>.csv
+```
+
+### 2 - DAG do Lakehouse (lakehouse_pipeline)
+
+Objetivo: Processar os dados da camada Bronze e gerar tabelas versionadas nas camadas Silver e Gold, utilizando Spark, Iceberg e Nessie.
+Dependência: É acionada automaticamente somente após a DAG de extração finalizar com sucesso. Isso é feito com o ExternalTaskSensor do Airflow.
+
+Detalhes de execução:
+  - Cada categoria Bronze possui um job Spark independente:
+  - Bronze Vocation → processa vocações.
+  - Bronze Skills → processa habilidades.
+  - Bronze Extra → processa categorias adicionais.
+
+Jobs Spark configurados com todos os jars necessários (AWS, Iceberg, Nessie) para garantir integração completa com MinIO/S3 e tabelas Iceberg.
+Camadas envolvidas: Bronze → Silver → Gold (transformações, limpeza, agregações e versionamento).
+
+Output: Tabelas Iceberg versionadas, auditáveis e prontas para consultas via Dremio ou dashboards.
+
+```txt
+landing_highscores_pipeline (DAG de extração)
+        |
+        v
+lakehouse_pipeline (DAG de processamento)
+        |
+        v
+Bronze -> Silver -> Gold (Iceberg + Nessie)
+```
 ---
 ## Estrutura do projeto
 

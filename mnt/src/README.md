@@ -61,11 +61,34 @@ A camada Landing é responsável pela extração e ingestão de dados brutos do 
 
 ---
 ## Camada Bronze
+Local: `src/bronze/`
 
+A camada Bronze é responsável pelo armazenamento dos dados brutos, já convertidos para um formato otimizado, mas ainda mantendo o máximo de fidelidade da fonte.
+
+Funcionalidades principais:
+  - Ingestão dos arquivos CSV da camada Landing em tabelas Iceberg com particionamento por mundo e por dia de ingestão (days(ingestion_time)), para otimização de consultas.
+  - Limpeza e padronização mínima, incluindo:
+      - Cast dos tipos corretos (ex: level para INT, experience para LONG).
+      - Remoção de caracteres indesejados.
+      - Inclusão da timestamp de ingestão (ingestion_time).
+      - Compressão Snappy habilitada para escrita parquet.
+  - Modularidade para execução diária com parâmetro --date.
 ---
 
 ## Camada Silver
+Local: `src/silver/`
 
+A camada Silver aplica transformações mais complexas e cria históricos versionados.
+
+Funcionalidades principais:
+  - Implementação de Slowly Changing Dimension Type 2 (SCD Type 2) via comando MERGE INTO do Iceberg para versionar mudanças no vocacionário dos jogadores.
+  - Registro histórico de alterações em nível, experiência, vocação e mundo, garantindo rastreabilidade dos dados ao longo do tempo.
+  - Novos campos adicionados:
+      - start_date: início do período do registro.
+      - end_date: fim do período do registro.
+      - is_current: flag para o registro ativo atual.
+  - Particionamento otimizado por mundo, dia do start_date e bucket hash sobre o nome do jogador para balancear leitura/escrita.
+  - Suporte para mudanças múltiplas em chaves naturais: nome, vocação e mundo, acompanhando alterações simultâneas.
 
 ---
 

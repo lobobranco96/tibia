@@ -1,15 +1,29 @@
 Historico de mudanças:
 
-
 21/10
-  - extract.py: Adicionado ao Vocation().processar_paginas() e Category.processar_paginas(), retries
-na tentativa de coletar os dados e falhar por timeout.
-  - utility.py: fix CSVLanding, a forma em que o csv é salvo no diretorio minio/landing
-  - Refatorando a logica entre Landing e Bronze. Agora os scripts que faz a coleta dos dados faz parte da camada landing
 
-  - tests/: mudança na importação dos modulos, bronze. >> .landing
-  - landing_app: documentaçao
-  - highscore_pipeline.py: fix importação from src.landing.landing_app
-  - adicionado script pyspark para bronze:
-    - vocation com iceberg e nessie
-  - funcao modular para criacao de spark session
+- extract.py: Adicionado ao Vocation().processar_paginas() e Category.processar_paginas(), retries na tentativa de coletar os dados e falhar por timeout.
+- utility.py: Fix no CSVLanding, ajuste na forma em que o CSV é salvo no diretório minio/landing.
+- Refatoração da lógica entre Landing e Bronze. Agora os scripts que fazem a coleta dos dados fazem parte da camada Landing.
+- tests/: Mudança na importação dos módulos, ajuste para .landing.
+- landing_app: Documentação atualizada.
+- highscore_pipeline.py: Fix na importação, agora from src.landing.landing_app.
+- Adicionado script PySpark para Bronze:
+  - Vocation com Iceberg e Nessie.
+- Função modular para criação da Spark Session.
+
+23/10
+
+- Camada Silver implementada com script PySpark utilizando Iceberg e Nessie, seguindo a arquitetura medalhão.
+- Implementação do SCD Type 2 na Silver para controlar histórico de mudanças dos jogadores.
+- Alterações para detectar e registrar mudanças nas colunas vocation e world além de level e experience.
+- Partitionamento otimizado na tabela Silver usando world, days(start_date) e bucket(8, name).
+- Uso do comando MERGE INTO para upsert eficiente e manutenção do histórico.
+- Inclusão de logging detalhado para monitoramento das etapas do pipeline Silver.
+- Passagem opcional de parâmetro --date para execução parametrizada por data.
+- DAG lakehouse_pipeline criada, acionada somente após finalização da DAG landing_highscores_pipeline.
+- Configuração de SparkSubmitOperator atualizada para incluir todos os jars necessários:
+  - hadoop-aws, aws-java-sdk-bundle, iceberg-spark-runtime, nessie-spark-extensions, iceberg-aws-bundle, aws-sdk-bundle.
+- Jobs Bronze (Vocation, Skills, Extra) parametrizados e independentes, permitindo paralelismo.
+- Integração completa com Iceberg + Nessie para versionamento e governança das tabelas Silver e Gold.
+- Explicação da DAG de extração e DAG Lakehouse adicionada ao README.
