@@ -21,9 +21,10 @@ class CSVLanding:
     def __init__(self):
         self.today = datetime.today()
 
-        self.base_dir = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "minio", "landing")
-        )
+        self.base_dir = "/mnt/minio/landing"
+        #self.base_dir = os.path.abspath(
+        #    os.path.join(os.path.dirname(__file__), "..", "..", "minio", "landing")
+        #)
 
     def write(self, df, category_dir, dataset_name):
         """
