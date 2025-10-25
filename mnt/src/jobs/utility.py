@@ -11,26 +11,15 @@ NESSIE_URI = os.getenv("NESSIE_URI")
 def create_spark_session(appname):
   master = "spark://spark-master:7077"
 
-  jar_packages = [
-      "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.6.1",
-      "org.projectnessie.nessie-integrations:nessie-spark-extensions-3.5_2.12:0.99.0",
-      "org.apache.iceberg:iceberg-aws-bundle:1.6.1"
-    ]
-
-  spark_extensions = [
-      "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
-      "org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
-  ]
   conf = (
       pyspark.SparkConf()
       .setAppName(appname)
       .set("spark.master", master)
-      .set("spark.jars.packages", ','.join(jar_packages))
       .set("spark.sql.extensions","org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,org.projectnessie.spark.extensions.NessieSparkSessionExtensions")
-      .set("spark.executor.memory", "2g")
-      .set("spark.executor.cores", "2")
+      .set("spark.executor.memory", "512m")
+      .set("spark.executor.cores", "1")
+      .set("spark.driver.memory", "512m")
       .set("spark.executor.instances", "1")
-      .set("spark.driver.memory", "2g")
       .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
       .set("spark.sql.catalog.nessie.s3.path-style-access", "true")
       .set("spark.sql.catalog.nessie.s3.endpoint", S3_ENDPOINT)
@@ -50,4 +39,6 @@ def create_spark_session(appname):
 
   spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
+
   return spark
+
