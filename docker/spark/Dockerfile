@@ -7,15 +7,14 @@ USER root
 # Instala pacotes adicionais do sistema
 RUN install_packages curl wget python3.11 python3.11-venv python3.11-dev
 
+# Atualiza pip e instala great_expectations no Python nativo do Spark
 # (Bitnami Spark usa /opt/bitnami/python/bin/python3 por padrão)
 RUN /opt/bitnami/python/bin/pip install --upgrade pip \
  && /opt/bitnami/python/bin/pip install boto3
+# Cria diretório de JARs extras
+RUN mkdir -p /opt/spark/jars
 
-# versão adequada do Guava (necessária para o Hadoop AWS)
-#RUN rm /opt/bitnami/spark/jars/guava-14.0.1.jar \
-# && wget -P /opt/bitnami/spark/jars https://repo1.maven.org/maven2/com/google/guava/guava/23.0/guava-23.0.jar
-
-# JARs necessários para acessar o MinIO via Hadoop AWS e Iceberg + Nessie
+# Baixa dependências para Iceberg, Nessie e MinIO (via Hadoop AWS)
 RUN wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar \
  && wget -P /opt/spark/jars https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar \
  && wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.6.1/iceberg-spark-runtime-3.5_2.12-1.6.1.jar \
@@ -23,17 +22,12 @@ RUN wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/hadoop/had
  && wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/1.6.1/iceberg-aws-bundle-1.6.1.jar \
  && wget -P /opt/spark/jars https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/2.28.13/bundle-2.28.13.jar
 
+# Permissões e classpath
+RUN chmod 644 /opt/spark/jars/*.jar
+ENV SPARK_CLASSPATH="/opt/spark/jars/*"
 
-RUN chmod 644 /opt/bitnami/spark/jars/*.jar
+# Configura Python para PySpark
+ENV PYSPARK_PYTHON=python3.11
+ENV PYSPARK_DRIVER_PYTHON=python3.11
 
-# Configura o classpath do Spark para incluir os JARs adicionais
-ENV SPARK_CLASSPATH="/opt/bitnami/spark/jars/*"
-
-# Configura permissões para a pasta de JARs do Spark
-RUN chmod -R 777 /opt/bitnami/spark/jars
-
-# Garante que o Spark utilize Python do próprio Spark
-ENV PYSPARK_PYTHON=/opt/bitnami/python/bin/python3
-ENV PYSPARK_DRIVER_PYTHON=/opt/bitnami/python/bin/python3
-
-USER 1001
+USER 185

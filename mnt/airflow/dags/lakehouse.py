@@ -69,10 +69,12 @@ def lakehouse_pipeline():
 
     # Tasks Bronze
     bronze_vocation = spark_task("bronze_vocation", BRONZE_SCRIPT["vocation"][0])
-    bronze_skills = spark_task("bronze_skills", BRONZE_SCRIPT["skills"][0])
-    bronze_extra = spark_task("bronze_extra", BRONZE_SCRIPT["extra"][0])
+    #bronze_skills = spark_task("bronze_skills", BRONZE_SCRIPT["skills"][0])
+    #bronze_extra = spark_task("bronze_extra", BRONZE_SCRIPT["extra"][0])
 
+    # Tasks Silver
+    silver_vocation = spark_task("silver_vocation", SILVER_SCRIPT["vocation"][0])
     # Dependência
-    wait_for_landing >> [bronze_vocation, bronze_skills, bronze_extra]
+    wait_for_landing >> bronze_vocation >> silver_vocation #, bronze_skills, bronze_extra]
 
 lakehouse = lakehouse_pipeline()
