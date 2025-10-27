@@ -1,6 +1,7 @@
 from src.jobs.utility import create_spark_session
 from pyspark.sql import functions as F
 from datetime import datetime
+from uuid import uuid4  # ✅ Import necessário para gerar batch_id único
 import logging
 import sys
 
@@ -13,10 +14,10 @@ def bronze_vocation(spark, date_str=None):
     CREATE TABLE IF NOT EXISTS nessie.bronze.vocation (
         name STRING,
         vocation STRING,
-        world STRING,
         level INT,
-        skill_level INT,
-        category STRING,
+        world STRING,
+        experience LONG,
+        world_type STRING,
         ingestion_time TIMESTAMP,
         ingestion_date DATE,
         source_system STRING,
@@ -39,11 +40,14 @@ def bronze_vocation(spark, date_str=None):
     logging.info(f"Lendo dados de: {path}")
 
     df_raw = spark.read.csv(path, header=True)
-    expected_cols = {"Name", "Vocation", "World", "Points", "WorldType", "Level"}
-    missing_cols = expected_cols - set(df_raw.columns)
-    if missing_cols:
-        logging.error(f"Colunas ausentes no CSV: {missing_cols}")
+    colunas_esperadas = {"Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"}
+    colunas_faltando = colunas_esperadas - set(df_raw.columns)
+    if colunas_faltando:
+        logging.error(f"Colunas ausentes no CSV: {colunas_faltando}")
         return
+
+    batch_id = str(uuid4())
+    logging.info(f"Gerando batch_id: {batch_id}")
 
     # Log de schema (opcional)
     df_raw.printSchema()
@@ -57,19 +61,21 @@ def bronze_vocation(spark, date_str=None):
         .withColumnRenamed("Points", "experience")
         .withColumnRenamed("WorldType", "world_type")
         .withColumn("ingestion_time", F.current_timestamp())
-        .withColumn("ingestion_date", F.current_date()) 
-        .withColumn("source_system", F.lit("Highscore Tibia page")) 
+        .withColumn("ingestion_date", F.current_date())
+        .withColumn("source_system", F.lit("highscore_tibia_page"))
+        .withColumn("batch_id", F.lit(batch_id))
         .withColumn("experience", F.regexp_replace(F.col("experience"), ",", "").cast("long"))
         .withColumn("level", F.col("level").cast("int"))
         .withColumn("vocation", F.trim(F.lower(F.col("vocation"))))
         .withColumn("world", F.trim(F.lower(F.col("world"))))
         .dropDuplicates(["name", "world"])
     )
+
     spark.conf.set("spark.sql.parquet.compression.codec", "snappy")
 
     record_count = df_bronze.count()
     if record_count > 0:
-        logging.info(f"Inserindo {record_count} registros na Bronze...")
+        logging.info(f"Inserindo {record_count} registros na Bronze com batch_id {batch_id}...")
         df_bronze.writeTo("nessie.bronze.vocation").append()
     else:
         logging.warning("Nenhum registro encontrado para gravar na Bronze.")
