@@ -27,3 +27,19 @@ Historico de mudanças:
 - Jobs Bronze (Vocation, Skills, Extra) parametrizados e independentes, permitindo paralelismo.
 - Integração completa com Iceberg + Nessie para versionamento e governança das tabelas Silver e Gold.
 - Explicação da DAG de extração e DAG Lakehouse adicionada ao README.
+
+27/10
+
+- Adicionada coluna batch_id nas tabelas Bronze (vocation e skills) para rastreabilidade de execução.
+- Implementado job PySpark Bronze Skills com Iceberg e Nessie:
+  - Padronização de schema (name, vocation, world, level, skill_level, category, ingestion_time, ingestion_date, source_system, batch_id).
+  - Particionamento em (world, ingestion_date) e compressão Snappy.
+- Criada camada Silver para Skills com histórico completo (SCD Type 2) via MERGE INTO, mantendo a mesma estrutura da Silver de Vocation:
+  - Controle de mudanças em skill_level, level, vocation e world.
+  - Colunas start_date, end_date, is_current adicionadas.
+- Atualização do README da pasta src/:
+  - Inclusão da documentação completa das camadas Bronze e Silver para skills.
+  - Descrição detalhada da rastreabilidade e versionamento com SCD Type 2.
+  - Inclusão das novas colunas (batch_id, is_current, start_date, end_date).
+- Logging aprimorado em todas as camadas para melhor auditoria do fluxo de dados.
+- Pipeline consolidado para ingestão e versionamento de vocation e skills em Iceberg + Nessie, garantindo governança total dos dados.
