@@ -22,7 +22,7 @@ default_args = {
     "retry_delay": timedelta(minutes=2),
 }
 
-def spark_task(task_id, app_path, args=""):
+def spark_task(task_id, app_path, args=None):
     """
     Cria um SparkSubmitOperator configurado para executar um script Spark com argumentos.
     """
@@ -50,7 +50,7 @@ def spark_task(task_id, app_path, args=""):
     dag_id="lakehouse_pipeline",
     description="Lakehouse pipeline, inicia o processamento dos dados da camada Bronze até Silver",
     default_args=default_args,
-    start_date=datetime(2025, 10, 15),
+    start_date=datetime(2025, 10, 28),
     catchup=False,
     tags=["tibia", "lakehouse", "etl"]
 )
@@ -69,14 +69,20 @@ def lakehouse_pipeline():
 
     # Tasks Bronze
     bronze_vocation = spark_task("bronze_vocation", BRONZE_SCRIPT["vocation"][0])
-    #bronze_skills = spark_task("bronze_skills", BRONZE_SCRIPT["skills"][0])
-    #bronze_extra = spark_task("bronze_extra", BRONZE_SCRIPT["extra"][0])
+    bronze_skills = spark_task("bronze_skills", BRONZE_SCRIPT["skills"][0])
+    bronze_extra = spark_task("bronze_extra", BRONZE_SCRIPT["extra"][0])
+
+    bronze_tasks = [bronze_vocation, bronze_skills, bronze_extra]
 
     # Tasks Silver
     silver_vocation = spark_task("silver_vocation", SILVER_SCRIPT["vocation"][0])
+    silver_skills = spark_task("silver_skills", SILVER_SCRIPT["skills"][0])
+    silver_extra = spark_task("silver_extra", SILVER_SCRIPT["extra"][0])
+
+    silver_tasks = [silver_vocation, silver_skills, silver_extra]
 
     # Dependência
-    
-    wait_for_landing >> bronze_vocation >> silver_vocation #, bronze_skills, bronze_extra]
+    wait_for_landing >> bronze_tasks >> silver_tasks
+
 
 lakehouse = lakehouse_pipeline()
