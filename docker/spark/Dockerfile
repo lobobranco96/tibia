@@ -5,12 +5,14 @@ WORKDIR /app
 USER root
 
 # Instala pacotes adicionais do sistema
-RUN install_packages curl wget python3.11 python3.11-venv python3.11-dev
+RUN install_packages curl wget
 
 # Atualiza pip e instala great_expectations no Python nativo do Spark
 # (Bitnami Spark usa /opt/bitnami/python/bin/python3 por padrão)
 RUN /opt/bitnami/python/bin/pip install --upgrade pip \
  && /opt/bitnami/python/bin/pip install boto3
+
+
 # Cria diretório de JARs extras
 RUN mkdir -p /opt/spark/jars
 
@@ -26,8 +28,8 @@ RUN wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/hadoop/had
 RUN chmod 644 /opt/spark/jars/*.jar
 ENV SPARK_CLASSPATH="/opt/spark/jars/*"
 
-# Configura Python para PySpark
-ENV PYSPARK_PYTHON=python3.11
-ENV PYSPARK_DRIVER_PYTHON=python3.11
+# Usar o Python interno do Spark
+ENV PYSPARK_PYTHON=/opt/bitnami/python/bin/python3
+ENV PYSPARK_DRIVER_PYTHON=/opt/bitnami/python/bin/python3
 
 USER 185
