@@ -78,17 +78,30 @@ Funcionalidades principais:
 ## Camada Silver
 Local: `src/silver/`
 
-A camada Silver aplica transformações mais complexas e cria históricos versionados.
+A camada Silver aplica transformações avançadas e versionamento histórico dos dados (SCD Type 2), garantindo rastreabilidade completa.
 
-Funcionalidades principais:
-  - Implementação de Slowly Changing Dimension Type 2 (SCD Type 2) via comando MERGE INTO do Iceberg para versionar mudanças no vocacionário dos jogadores.
-  - Registro histórico de alterações em nível, experiência, vocação e mundo, garantindo rastreabilidade dos dados ao longo do tempo.
-  - Novos campos adicionados:
-      - start_date: início do período do registro.
-      - end_date: fim do período do registro.
-      - is_current: flag para o registro ativo atual.
-  - Particionamento otimizado por mundo, dia do start_date e bucket hash sobre o nome do jogador para balancear leitura/escrita.
-  - Suporte para mudanças múltiplas em chaves naturais: nome, vocação e mundo, acompanhando alterações simultâneas.
+#### Tabela: vocation
+  - Implementa Slowly Changing Dimension Type 2 (SCD2) via MERGE INTO.
+  - Mantém histórico completo de mudanças de nível, experiência, vocação e mundo.
+  - Novas colunas:
+      - start_date: início da validade do registro.
+      - end_date: fim da validade.
+      - is_current: flag indicando o registro ativo atual.
+  - Particionamento otimizado por:
+      - world
+      - days(start_date)
+      - bucket(8, name)
+  - Rastreabilidade total de evolução dos jogadores por vocação
+
+#### Tabela: skills
+  - Aplica a mesma abordagem SCD Type 2 da vocation, agora para habilidades individuais.
+  - Cada jogador possui histórico versionado por categoria de skill (ex: “Magic Level”, “Sword Fighting”).
+  - Controle de mudanças em skill_level, level, vocation e world.
+  - Estrutura idêntica à vocation:
+      - start_date
+      - end_date
+      - is_current
+  - Permite análises temporais da evolução da categoria skills ao longo do tempo.
 
 ---
 
