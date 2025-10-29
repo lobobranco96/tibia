@@ -1,7 +1,7 @@
 from src.jobs.utility import create_spark_session
 from pyspark.sql import functions as F
 from datetime import datetime
-from uuid import uuid4  # ✅ Import necessário para gerar batch_id único
+from uuid import uuid4 
 import logging
 import sys
 
@@ -49,7 +49,6 @@ def bronze_vocation(spark, date_str=None):
     batch_id = str(uuid4())
     logging.info(f"Gerando batch_id: {batch_id}")
 
-    # Log de schema (opcional)
     df_raw.printSchema()
 
     df_bronze = (

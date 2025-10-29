@@ -25,6 +25,12 @@ def silver_vocation(spark):
         )
         USING iceberg
         PARTITIONED BY (world, days(start_date), bucket(8, name))
+        TBLPROPERTIES (
+            'format-version' = '2',
+            'write.format.default' = 'parquet',
+            'write.metadata.compression' = 'gzip',
+            'write.delete.mode' = 'merge-on-read'
+        )
         """)
 
         logging.info("Tabela Silver inicializada com sucesso.")
@@ -45,7 +51,6 @@ def silver_vocation(spark):
         df_new.createOrReplaceTempView("vocation_updates")
         logging.info("View temporária `vocation_updates` criada com sucesso.")
 
-        # Aplicar SCD Type 2 com MERGE INTO
         logging.info("Aplicando MERGE INTO (SCD Type 2) na Silver...")
 
         merge_query = """

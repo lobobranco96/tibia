@@ -25,7 +25,12 @@ def silver_skills(spark):
         )
         USING iceberg
         PARTITIONED BY (world, days(start_date), bucket(8, name))
-        TBLPROPERTIES ('format-version'='2')
+        TBLPROPERTIES (
+          'format-version' = '2',
+          'write.format.default' = 'parquet',
+          'write.metadata.compression' = 'gzip',
+          'write.delete.mode' = 'merge-on-read'
+        )
         """)
 
         logging.info("Tabela Silver 'skills' inicializada com sucesso.")

@@ -45,8 +45,7 @@ def bronze_skills(spark, date_str=None):
     if colunas_faltando:
         logging.error(f"Colunas ausentes no CSV: {colunas_faltando}")
         return
-
-    # ✅ gera um identificador único para o batch atual
+        
     batch_id = str(uuid4())
     logging.info(f"Gerando batch_id: {batch_id}")
 
