@@ -146,12 +146,12 @@ Dependência: É acionada automaticamente somente após a DAG de extração fina
 
 Detalhes de execução:
   - Cada categoria Bronze possui um job Spark independente:
-  - Bronze Vocation → processa vocações.
-  - Bronze Skills → processa habilidades.
-  - Bronze Extra → processa categorias adicionais.
+  - Bronze Vocation > Silver Vocation.
+  - Bronze Skills > Silver Skills.
+  - Bronze Extra > Silver Extra.
 
 Jobs Spark configurados com todos os jars necessários (AWS, Iceberg, Nessie) para garantir integração completa com MinIO/S3 e tabelas Iceberg.
-Camadas envolvidas: Bronze → Silver → Gold (transformações, limpeza, agregações e versionamento).
+Camadas envolvidas: Bronze > Silver > Gold (transformações, limpeza, agregações e versionamento).
 
 Output: Tabelas Iceberg versionadas, auditáveis e prontas para consultas via Dremio ou dashboards.
 
@@ -183,12 +183,14 @@ Bronze -> Silver -> Gold (Iceberg + Nessie)
 ├── mnt
 │   ├── airflow
 │   │   └── dags
-│   │       └── highscore_pipeline.py
+│   │       ├── lakehouse.py
+│   │       └── landing.py
 │   ├── minio
-│   │   └── bronze
+│   │   ├── bronze
+│   │   └── landing
 │   │       └── year=2025
 │   │           └── month=10
-│   │               └── day=16
+│   │               └── day=23
 │   │                   ├── experience
 │   │                   │   ├── druid.csv
 │   │                   │   ├── knight.csv
@@ -208,29 +210,43 @@ Bronze -> Silver -> Gold (Iceberg + Nessie)
 │   │                       ├── axe.csv
 │   │                       ├── club.csv
 │   │                       ├── distance.csv
+│   │                       ├── fist.csv
+│   │                       ├── magic_level.csv
 │   │                       ├── shielding.csv
 │   │                       └── sword.csv
 │   ├── notebooks
 │   ├── requirements.txt
 │   └── src
-│       ├── bronze
-│       │   ├── bronze_app.py
+│       ├── jobs
+│       │   ├── bronze
+│       │   │   ├── extra.py
+│       │   │   ├── skills.py
+│       │   │   └── vocation.py
+│       │   ├── gold
+│       │   │   └── gold_app.py
+│       │   ├── __init__.py
+│       │   ├── silver
+│       │   │   ├── extra.py
+│       │   │   ├── skills.py
+│       │   │   └── vocation.py
+│       │   └── utility.py
+│       ├── landing
 │       │   ├── extract.py
 │       │   ├── __init__.py
+│       │   ├── landing_app.py
 │       │   └── utility.py
-│       ├── gold
-│       │   └── gold_app.py
-│       ├── silver
-│       │   └── silver_app.py
+│       ├── patch.txt
+│       ├── README.md
 │       └── tests
 │           ├── html
 │           │   └── highscore_page.html
 │           ├── __init__.py
 │           ├── test_category.py
+│           ├── test_csvlanding.py
 │           ├── test_highscore.py
 │           └── test_vocation.py
 ├── README.md
-└── services
+├── services
     ├── lakehouse.yaml
     ├── observability.yaml
     ├── orchestration.yaml
@@ -240,4 +256,3 @@ Bronze -> Silver -> Gold (Iceberg + Nessie)
 
 ## EM CONSTRUÇÃO
 
-## FUTURAMENTE EVOLUIR PARA SESSÇÃO DE SKILLS (Magic Level, Axe, Sword, Distance e etc)
