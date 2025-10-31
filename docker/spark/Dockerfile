@@ -1,35 +1,35 @@
-FROM bitnami/spark:3.5.3
-
-WORKDIR /app
+FROM apache/spark:3.5.3
 
 USER root
+WORKDIR /opt/spark/app
 
-# Instala pacotes adicionais do sistema
-RUN install_packages curl wget
+RUN apt-get update && \
+    apt-get install -y curl wget python3 python3-pip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Atualiza pip e instala great_expectations no Python nativo do Spark
-# (Bitnami Spark usa /opt/bitnami/python/bin/python3 por padrão)
-RUN /opt/bitnami/python/bin/pip install --upgrade pip \
- && /opt/bitnami/python/bin/pip install boto3
-
-
-# Cria diretório de JARs extras
 RUN mkdir -p /opt/spark/jars
 
-# Baixa dependências para Iceberg, Nessie e MinIO (via Hadoop AWS)
-RUN wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar \
- && wget -P /opt/spark/jars https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar \
- && wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.6.1/iceberg-spark-runtime-3.5_2.12-1.6.1.jar \
- && wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/projectnessie/nessie-integrations/nessie-spark-extensions-3.5_2.12/0.99.0/nessie-spark-extensions-3.5_2.12-0.99.0.jar \
- && wget -P /opt/spark/jars https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/1.6.1/iceberg-aws-bundle-1.6.1.jar \
- && wget -P /opt/spark/jars https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/2.28.13/bundle-2.28.13.jar
+#  DEPENDÊNCIAS PARA ICEBERG, NESSIE E MINIO
 
-# Permissões e classpath
+RUN wget -P /opt/spark/jars \
+    https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar && \
+    wget -P /opt/spark/jars \
+    https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar && \
+    wget -P /opt/spark/jars \
+    https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-spark-runtime-3.5_2.12/1.6.1/iceberg-spark-runtime-3.5_2.12-1.6.1.jar && \
+    wget -P /opt/spark/jars \
+    https://repo1.maven.org/maven2/org/projectnessie/nessie-integrations/nessie-spark-extensions-3.5_2.12/0.99.0/nessie-spark-extensions-3.5_2.12-0.99.0.jar && \
+    wget -P /opt/spark/jars \
+    https://repo1.maven.org/maven2/org/apache/iceberg/iceberg-aws-bundle/1.6.1/iceberg-aws-bundle-1.6.1.jar && \
+    wget -P /opt/spark/jars \
+    https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/2.28.13/bundle-2.28.13.jar
+
 RUN chmod 644 /opt/spark/jars/*.jar
 ENV SPARK_CLASSPATH="/opt/spark/jars/*"
 
-# Usar o Python interno do Spark
-ENV PYSPARK_PYTHON=/opt/bitnami/python/bin/python3
-ENV PYSPARK_DRIVER_PYTHON=/opt/bitnami/python/bin/python3
+ENV PYSPARK_PYTHON=/usr/bin/python3
+ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python3
 
 USER 185
+ENTRYPOINT ["/opt/spark/bin/spark-submit"]
