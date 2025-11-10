@@ -1,17 +1,19 @@
+# Imagem base oficial do Apache Spark 3.5.3
 FROM apache/spark:3.5.3
 
 USER root
 WORKDIR /opt/spark/app
 
+# Instala Python, utilitários e limpa cache
 RUN apt-get update && \
     apt-get install -y curl wget python3 python3-pip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /opt/spark/jars
+# Cria diretórios de jars e logs
+RUN mkdir -p /opt/spark/jars /opt/spark/logs && chmod -R a+rw /opt/spark
 
-#  DEPENDÊNCIAS PARA ICEBERG, NESSIE E MINIO
-
+# Dependências (Iceberg, Nessie, Hadoop AWS, SDK)
 RUN wget -P /opt/spark/jars \
     https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/3.3.4/hadoop-aws-3.3.4.jar && \
     wget -P /opt/spark/jars \
@@ -25,11 +27,17 @@ RUN wget -P /opt/spark/jars \
     wget -P /opt/spark/jars \
     https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/2.28.13/bundle-2.28.13.jar
 
-RUN chmod 644 /opt/spark/jars/*.jar
-ENV SPARK_CLASSPATH="/opt/spark/jars/*"
-
+# Define variáveis para o Spark rodar em foreground (não-daemon)
+ENV SPARK_NO_DAEMONIZE=true
 ENV PYSPARK_PYTHON=/usr/bin/python3
 ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python3
 
+# Copia o script de entrada
+COPY entrypoint.sh /opt/spark/entrypoint.sh
+RUN chmod +x /opt/spark/entrypoint.sh
+
+# Troca para o usuário padrão Spark
 USER 185
-ENTRYPOINT ["/opt/spark/bin/spark-submit"]
+
+# Executa o entrypoint customizado
+ENTRYPOINT ["/opt/spark/entrypoint.sh"]
