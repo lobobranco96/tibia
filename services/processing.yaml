@@ -17,7 +17,7 @@ x-spark-worker-default: &spark_worker_default
   <<: *default_config
   environment:
     - SPARK_MODE=worker
-    - SPARK_MASTER_URL=spark://spark-master:7077
+    - SPARK_MASTER=spark://spark-master:7077
     - SPARK_WORKER_MEMORY=2G
     - SPARK_WORKER_CORES=2
     - SPARK_RPC_AUTHENTICATION_ENABLED=no
@@ -47,7 +47,6 @@ services:
     ports:
       - "9090:8080"
       - "7077:7077"
-      - '18080:8080'
     networks:
       - lakehouse_network
 
@@ -66,3 +65,4 @@ services:
 networks:
   lakehouse_network:
     name: lakehouse_network
+
