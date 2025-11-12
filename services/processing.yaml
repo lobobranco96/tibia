@@ -5,8 +5,6 @@ x-common-config: &default_config
     - lakehouse_network
   env_file:
     - .credentials.conf
-  build:
-    context: ../docker/spark
   healthcheck:
     test: ["CMD", "ls"]
     timeout: 45s
@@ -14,52 +12,57 @@ x-common-config: &default_config
     retries: 10
     start_period: 10s
 
+x-spark-worker-default: &spark_worker_default
+  build: ../docker/spark
+  <<: *default_config
+  environment:
+    - SPARK_MODE=worker
+    - SPARK_MASTER_URL=spark://spark-master:7077
+    - SPARK_WORKER_MEMORY=2G
+    - SPARK_WORKER_CORES=2
+    - SPARK_RPC_AUTHENTICATION_ENABLED=no
+    - SPARK_RPC_ENCRYPTION_ENABLED=no
+    - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+    - SPARK_SSL_ENABLED=no
+    - SPARK_USER=spark
+  networks:
+    - lakehouse_network
+
+
 services:
   spark-master:
-    <<: *default_config
+    build: ../docker/spark
     container_name: spark-master
+    <<: *default_config
     environment:
       - SPARK_MODE=master
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_METRICS_MASTER_ENABLED=true
       - SPARK_SSL_ENABLED=no
       - SPARK_USER=spark
-    ports:
-      - "18080:8080"
-      - "7077:7077"
     volumes:
-      - ./data:/opt/spark/data
+      - ../mnt/src/jobs:/jobs/
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+      - '18080:8080'
+    networks:
+      - lakehouse_network
 
   spark-worker-1:
-    <<: *default_config
     container_name: spark-worker-1
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_WORKER_CORES=2
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
+    <<: *spark_worker_default
     depends_on:
       - spark-master
-
+      
   spark-worker-2:
-    <<: *default_config
     container_name: spark-worker-2
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2G
-      - SPARK_WORKER_CORES=2
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
+    <<: *spark_worker_default
     depends_on:
       - spark-master
 
 networks:
   lakehouse_network:
-    driver: bridge
+    name: lakehouse_network
