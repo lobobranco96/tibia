@@ -82,7 +82,11 @@ def lakehouse_pipeline():
     silver_tasks = [silver_vocation, silver_skills, silver_extra]
 
     # Dependência
-    wait_for_landing >> bronze_tasks >> silver_tasks
+    #wait_for_landing >> [*bronze_tasks] >> [*silver_tasks]
+    wait_for_landing >> bronze_tasks
+
+    for task in bronze_tasks:
+        task >> silver_tasks
 
 
 lakehouse = lakehouse_pipeline()
