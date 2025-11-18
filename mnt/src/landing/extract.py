@@ -217,13 +217,15 @@ class VocationScraper(BaseScraper):
         Returns:
             pd.DataFrame: DataFrame consolidado com os dados de todas as páginas e mundos.
         """
+
+        max_pages = MAX_PAGES
         todos_os_dados = []
         if vocation_id == 1:
-          MAX_PAGES = 10
+          max_pages = 10
         for world_name, world_type in self.WORLD_TYPES.items():
             urls = [
                 self.BASE_URL.format(world_type=world_type, vocation_id=vocation_id, page_number=i)
-                for i in range(1, MAX_PAGES + 1)
+                for i in range(1, max_pages + 1)
             ]
             logger.info(f"Coletando dados: {world_name} | Vocação {vocation_id}")
             df = self.processar_paginas(urls)
