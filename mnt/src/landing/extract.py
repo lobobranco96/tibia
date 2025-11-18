@@ -218,7 +218,8 @@ class VocationScraper(BaseScraper):
             pd.DataFrame: DataFrame consolidado com os dados de todas as páginas e mundos.
         """
         todos_os_dados = []
-
+        if vocation_id == 1:
+          MAX_PAGES = 10
         for world_name, world_type in self.WORLD_TYPES.items():
             urls = [
                 self.BASE_URL.format(world_type=world_type, vocation_id=vocation_id, page_number=i)
@@ -255,11 +256,20 @@ class CategoryScraper(BaseScraper):
     )
 
     DEFAULT_CATEGORIES = {
-        "sword": (13, "Sword Fighting", 2),
-        "distance": (5, "Distance Fighting", 3),
-        "magic": (11, "Magic Level", 4),
-        "shielding": (12, "Shielding", 0),
-        "fishing": (7, "Fishing", 0),
+            "achievements": (1, "Achievements", 0),
+            "axe": (2, "Axe Fighting", 2),
+            "sword": (13, "Sword Fighting", 2),
+            "club": (4, "Club Fighting", 2),
+            "distance": (5, "Distance Fighting", 3),
+            "magic_level": (11, "Magic Level", 4),
+            "fist": (8, "Fist Fighting", 0),
+            "shielding": (12, "Shielding", 0),
+            "fishing": (7, "Fishing", 0),
+            "loyalty": (10, "Loyalty Points", 0),
+            "drome": (14, "Drome Score", 0),
+            "boss": (15, "Boss Points", 0),
+            "charm": (3, "Charm Points", 0),
+            "goshnair": (9, "Goshnar's Taint", 0)
     }
 
     def __init__(self, fetcher: BuscadorPagina, parser: HighScoreParser, categories=None):
@@ -297,5 +307,4 @@ class CategoryScraper(BaseScraper):
         df = self.processar_paginas(urls)
         if not df.empty:
             df["Category"] = category_name
-            df["VocationID"] = vocation_id
         return df
