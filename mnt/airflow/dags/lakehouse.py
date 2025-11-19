@@ -39,6 +39,7 @@ def spark_task(task_id, app_path, args=None):
     return SparkSubmitOperator(
         task_id=task_id,
         application=app_path,
+        pool="spark_pool",
         conn_id="spark_default",
         conf=conf,
         verbose=True,
