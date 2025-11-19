@@ -34,7 +34,7 @@ services:
       - SPARK_MODE=master
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
     volumes:
-      - ../mnt/src/jobs:/jobs/
+      - ../mnt/src:/opt/airflow/dags/src
     ports:
       - "9090:8080"
       - "7077:7077"
