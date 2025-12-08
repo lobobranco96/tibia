@@ -6,16 +6,8 @@ from airflow.operators.bash import BashOperator
 from airflow.utils.task_group import TaskGroup
 
 
-BRONZE_SCRIPT = {
-    "vocation": "/opt/airflow/dags/src/jobs/bronze/vocation.py",
-    "skills": "/opt/airflow/dags/src/jobs/bronze/skills.py",
-    "extra": "/opt/airflow/dags/src/jobs/bronze/extra.py",
-}
-SILVER_SCRIPT = {
-    "vocation": "/opt/airflow/dags/src/jobs/silver/vocation.py",
-    "skills": "/opt/airflow/dags/src/jobs/silver/skills.py",
-    "extra": "/opt/airflow/dags/src/jobs/silver/extra.py",
-}
+BRONZE_SCRIPT = "/opt/airflow/dags/src/jobs/bronze_job.py"
+SILVER_SCRIPT = "/opt/airflow/dags/src/jobs/silver_job.py"
 
 default_args = {
     "owner": "lobobranco",
@@ -80,25 +72,49 @@ def lakehouse_pipeline():
     # Task Group
     with TaskGroup(group_id="lakehouse") as lakehouse_group:
 
-        # Tasks Bronze
-        bronze_vocation = spark_task("bronze_vocation", BRONZE_SCRIPT["vocation"])
-        #bronze_skills = spark_task("bronze_skills", BRONZE_SCRIPT["skills"])
-        #bronze_extra = spark_task("bronze_extra", BRONZE_SCRIPT["extra"])
+        # ---------- BRONZE ----------
+        bronze_vocation = spark_task(
+            "bronze_vocation",
+            BRONZE_SCRIPT,
+            args=["vocation"]
+        )
 
-       # bronze_tasks = [bronze_vocation, bronze_skills, bronze_extra]
+        bronze_skills = spark_task(
+            "bronze_skills",
+            BRONZE_SCRIPT,
+            args=["skills"]
+        )
 
-        # Tasks Silver
-        silver_vocation = spark_task("silver_vocation", SILVER_SCRIPT["vocation"])
-       # silver_skills = spark_task("silver_skills", SILVER_SCRIPT["skills"])
-       # silver_extra = spark_task("silver_extra", SILVER_SCRIPT["extra"])
+        bronze_extra = spark_task(
+            "bronze_extra",
+            BRONZE_SCRIPT,
+            args=["extra"]
+        )
 
-        #silver_tasks = [silver_vocation, silver_skills, silver_extra]
+        # ---------- SILVER ----------
+        silver_vocation = spark_task(
+            "silver_vocation",
+            SILVER_SCRIPT,
+            args=["vocation"]
+        )
 
-        # bronze[i] → silver[i]
-        #for b_task, s_task in zip(bronze_tasks, silver_tasks):
-        #    b_task >> s_task
+        silver_skills = spark_task(
+            "silver_skills",
+            SILVER_SCRIPT,
+            args=["skills"]
+        )
 
+        silver_extra = spark_task(
+            "silver_extra",
+            SILVER_SCRIPT,
+            args=["extra"]
+        )
+
+        # bronze[i] > silver[i]
         bronze_vocation >> silver_vocation
+        bronze_skills >> silver_skills
+        bronze_extra >> silver_extra
+
     # Dependências externas
     wait_for_landing >> start_pipeline >> lakehouse_group >> end_pipeline
 
