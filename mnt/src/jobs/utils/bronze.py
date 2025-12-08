@@ -11,6 +11,7 @@ class Bronze:
     self.date_str = date_str
 
   def vocation(self):
+      self.spark.conf.set("spark.sql.catalog.nessie.warehouse", "s3a://bronze/")
 
       self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.vocation")
 

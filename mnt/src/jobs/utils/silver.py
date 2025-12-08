@@ -14,6 +14,7 @@ class Silver:
 
   def vocation(self):
       try:
+          self.spark.conf.set("spark.sql.catalog.nessie.warehouse", "s3a://silver/")
           self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver.vocation")
           self.spark.sql("""
           CREATE TABLE IF NOT EXISTS nessie.silver.vocation (
