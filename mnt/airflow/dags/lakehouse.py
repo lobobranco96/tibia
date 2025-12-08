@@ -5,6 +5,27 @@ from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOpe
 from airflow.operators.bash import BashOperator
 from airflow.utils.task_group import TaskGroup
 
+"""
+Pipeline Lakehouse – Tibia Highscores
+-------------------------------------
+
+Este módulo define uma DAG Airflow responsável por orquestrar o processamento
+dos dados nas camadas Bronze e Silver do Lakehouse baseado em Apache Iceberg
+e Spark. A pipeline depende da execução prévia da DAG de Landing
+(`tibia_highscores_pipeline`) e utiliza tarefas SparkSubmitOperator para processar
+os dados de vocações, skills e informações extras.
+
+Fluxo Geral:
+    1. Aguardamos a DAG de Landing (coleta bruta) finalizar.
+    2. Executamos o processamento Bronze (padronização e limpeza inicial).
+    3. Executamos o processamento Silver (modelagem e estrutura refinada).
+    4. Finalizamos a pipeline.
+
+Tecnologias principais:
+    - Apache Spark com Iceberg e Nessie
+    - Airflow (TaskGroup, ExternalTaskSensor, SparkSubmitOperator)
+    - Orquestração em camadas da arquitetura Medallion
+"""
 
 BRONZE_SCRIPT = "/opt/airflow/dags/src/jobs/bronze_job.py"
 SILVER_SCRIPT = "/opt/airflow/dags/src/jobs/silver_job.py"
@@ -17,6 +38,31 @@ default_args = {
 
 
 def spark_task(task_id, app_path, args=None):
+    """
+    Cria uma tarefa SparkSubmitOperator configurada para executar jobs Spark no cluster.
+
+    Parameters
+    ----------
+    task_id : str
+        Identificador único da task no Airflow.
+    app_path : str
+        Caminho do script PySpark a ser executado.
+    args : list | None
+        Lista de argumentos a serem enviados ao script PySpark. Caso seja None,
+        nenhuma aplicação de argumentos será enviada.
+
+    Returns
+    -------
+    SparkSubmitOperator
+        Uma tarefa Airflow configurada para submissão de jobs Spark.
+
+    Observações
+    -----------
+    Esta função encapsula as configurações necessárias para uso de:
+    - Iceberg + Nessie
+    - Credenciais AWS para S3/MinIO
+    - Inclusão de .jars obrigatórias para transações ACID e catálogo
+    """
     conf = {
         "spark.jars": ",".join([
             "/opt/spark/jars/aws-java-sdk-bundle-1.12.262.jar",
@@ -42,13 +88,25 @@ def spark_task(task_id, app_path, args=None):
 
 @dag(
     dag_id="lakehouse_pipeline",
-    description="Lakehouse pipeline, inicia o processamento dos dados da camada Bronze até Silver",
+    description="Lakehouse pipeline: processa dados da camada Bronze até Silver utilizando Spark + Iceberg.",
     default_args=default_args,
     start_date=datetime(2025, 11, 17),
     tags=["tibia", "lakehouse", "etl"]
 )
 def lakehouse_pipeline():
+    """
+    DAG responsável por orquestrar o processamento das camadas Bronze e Silver do Lakehouse Tibia.
 
+    Fluxo:
+        - Aguarda a finalização da DAG de Landing.
+        - Inicia a pipeline com BashOperator.
+        - Executa tasks Bronze e Silver em paralelo por categoria.
+        - Finaliza a pipeline.
+
+    O TaskGroup "lakehouse" agrupa todos os processamentos Spark.
+    """
+
+    # Espera a DAG de landing concluir
     wait_for_landing = ExternalTaskSensor(
         task_id="wait_for_landing_dag",
         external_dag_id="tibia_highscores_pipeline",
@@ -69,7 +127,9 @@ def lakehouse_pipeline():
         bash_command="echo 'Finalizando a pipeline.'"
     )
 
-    # Task Group
+    # -----------------------------
+    #   TASK GROUP: BRONZE + SILVER
+    # -----------------------------
     with TaskGroup(group_id="lakehouse") as lakehouse_group:
 
         # ---------- BRONZE ----------
@@ -115,7 +175,7 @@ def lakehouse_pipeline():
         bronze_skills >> silver_skills
         bronze_extra >> silver_extra
 
-    # Dependências externas
+    # Dependências principais da DAG
     wait_for_landing >> start_pipeline >> lakehouse_group >> end_pipeline
 
 
