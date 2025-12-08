@@ -2,8 +2,8 @@ from pyspark.sql import functions as F
 from datetime import datetime
 from uuid import uuid4 
 import logging
-import sys
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class Bronze:
   def __init__(self, spark, date_str):
@@ -86,6 +86,8 @@ class Bronze:
   
 
   def skills(self):
+      self.spark.conf.set("spark.sql.catalog.nessie.warehouse", "s3a://bronze/")
+
       self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.skills")
 
       self.spark.sql("""
@@ -159,6 +161,8 @@ class Bronze:
       Job Bronze para consolidar dados de múltiplos arquivos CSV na pasta 'extra/'.
       Normaliza colunas e grava em tabela Iceberg padronizada.
       """
+      self.spark.conf.set("spark.sql.catalog.nessie.warehouse", "s3a://bronze/")
+      
       self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.extra")
 
       self.spark.sql("""
