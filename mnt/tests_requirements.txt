@@ -1,0 +1,7 @@
+pandas
+requests
+beautifulsoup4
+black
+flake8 
+pytest
+lxml
