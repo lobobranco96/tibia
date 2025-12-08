@@ -36,7 +36,7 @@ if __name__ == "__main__":
         if hasattr(silver, silver_type):
             method = getattr(silver, silver_type)
             method()
-            logging.info(f"Camada silver finalizada.")
+            logging.info("Camada silver finalizada.")
         else:
             raise AttributeError(f"'{silver_type}' não possui método correspondente no Silver")
 

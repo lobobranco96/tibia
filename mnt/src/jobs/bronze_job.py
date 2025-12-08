@@ -36,7 +36,7 @@ if __name__ == "__main__":
         if hasattr(bronze, bronze_type):
             method = getattr(bronze, bronze_type)
             method()
-            logging.info(f"Camada bronze finalizada.")
+            logging.info("Camada bronze finalizada.")
         else:
             raise AttributeError(f"'{bronze_type}' não possui método correspondente no Bronze")
 
