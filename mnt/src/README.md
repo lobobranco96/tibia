@@ -1,8 +1,14 @@
 # Estrutura da Pasta `src`
 
-- Este diretório contém toda a lógica de código-fonte do projeto, organizada em camadas do pipeline de dados (padrão Lakehouse).
-- Contem  todos os scripts que realizam web scraping, tratamento inicial de dados e salvamento em MinIO ou S3-style storage, preparando os dados para serem processados nas camadas Silver e Gold.
+Este diretório contém toda a lógica-fonte do projeto, organizada seguindo o padrão arquitetural Lakehouse (camadas Landing > Bronze > Silver > Gold).
 
+A pasta concentra:
+- Scripts de web scraping,
+- Tratamento inicial de dados,
+- Ingestão no MinIO (S3-compatible),
+- Processamento com Apache Spark (Iceberg),
+- Transformações de versionamento (SCD2),
+- Testes automatizados.
 ---
 
 ## Camada landing
@@ -61,22 +67,40 @@ A camada Landing é responsável pela extração e ingestão de dados brutos do 
 
 ---
 ## Camada Bronze
-Local: `src/bronze/`
+Local: `src/jobs/bronze_job.py`
 
-A camada Bronze é responsável pelo armazenamento dos dados brutos, já convertidos para um formato otimizado, mas ainda mantendo o máximo de fidelidade da fonte.
+A Bronze mantém dados quase brutos, porém estruturados em tabelas Iceberg, sendo o ponto de entrada do processamento distribuído no Spark.
+
+Executado pelo Airflow via:
+```bash
+  spark-submit bronze_job.py vocation
+  spark-submit bronze_job.py skills
+  spark-submit bronze_job.py extra
+```
+
+O script lê sys.argv[1] e executa o processamento da categoria específica.
 
 Funcionalidades principais:
-  - Ingestão dos arquivos CSV da camada Landing em tabelas Iceberg com particionamento por mundo e por dia de ingestão (days(ingestion_time)), para otimização de consultas.
+  - Ingestão dos arquivos CSV da Landing Zone em tabelas Iceberg com particionamento por mundo e por dia de ingestão (days(ingestion_time)), para otimização de consultas.
   - Limpeza e padronização mínima, incluindo:
       - Cast dos tipos corretos (ex: level para INT, experience para LONG).
       - Remoção de caracteres indesejados.
       - Inclusão da timestamp de ingestão (ingestion_time).
       - Compressão Snappy habilitada para escrita parquet.
   - Modularidade para execução diária com parâmetro --date.
+
+
 ---
 
 ## Camada Silver
-Local: `src/silver/`
+Local: `src/jobs/silver_job.py`
+
+Executado pelo Airflow via:
+```bash
+  spark-submit silver_job.py vocation
+  spark-submit silver_job.py skills
+  spark-submit silver_job.py extra
+```
 
 A camada Silver aplica transformações avançadas e versionamento histórico dos dados (SCD Type 2), garantindo rastreabilidade completa.
 
