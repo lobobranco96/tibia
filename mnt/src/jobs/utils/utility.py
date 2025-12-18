@@ -34,6 +34,7 @@ def create_spark_session(appname):
         .set("spark.sql.catalog.nessie.cache-enabled", "false")
         .set("spark.sql.catalog.nessie.s3.access-key-id", AWS_ACCESS_KEY)
         .set("spark.sql.catalog.nessie.s3.secret-access-key", AWS_SECRET_KEY)
+        .set("spark.sql.catalog.nessie.warehouse", "s3a://lakehouse/warehouse/")
 
         # CONFIG S3 -> ICEBERG
         .set("spark.sql.catalog.nessie.s3.path-style-access", "true")

@@ -75,9 +75,6 @@ class Bronze:
         Tabela criada: nessie.bronze.vocation
         """
 
-        # Configuração do warehouse Iceberg
-        self.spark.conf.set("spark.sql.catalog.nessie.warehouse", "s3a://bronze/")
-
         # Namespace
         self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.vocation")
 
@@ -173,8 +170,6 @@ class Bronze:
         Tabela criada: nessie.bronze.skills
         """
 
-        self.spark.conf.set("spark.sql.catalog.nessie.warehouse", "s3a://bronze/")
-
         self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.skills")
 
         self.spark.sql("""
@@ -259,7 +254,6 @@ class Bronze:
         Tabela criada: nessie.bronze.extra
         """
 
-        self.spark.conf.set("spark.sql.catalog.nessie.warehouse", "s3a://bronze/")
         self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.extra")
 
         self.spark.sql("""

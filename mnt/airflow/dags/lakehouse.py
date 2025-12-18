@@ -82,7 +82,8 @@ def spark_task(task_id, app_path, args=None):
         conf=conf,
         py_files="/opt/airflow/dags/src/jobs",
         verbose=True,
-        application_args=[args] if args else None,
+        #application_args=[args] if args else None,
+        application_args=args if args else None
     )
 
 
@@ -136,20 +137,20 @@ def lakehouse_pipeline():
         bronze_vocation = spark_task(
             "bronze_vocation",
             BRONZE_SCRIPT,
-            args=["vocation"]
+            args=["vocation", "--date", "2025-07-12"]
         )
 
-        bronze_skills = spark_task(
-            "bronze_skills",
-            BRONZE_SCRIPT,
-            args=["skills"]
-        )
+        #bronze_skills = spark_task(
+        #    "bronze_skills",
+        #    BRONZE_SCRIPT,
+        #    args=["skills"]
+        #)
 
-        bronze_extra = spark_task(
-            "bronze_extra",
-            BRONZE_SCRIPT,
-            args=["extra"]
-        )
+        #bronze_extra = spark_task(
+        #    "bronze_extra",
+        #    BRONZE_SCRIPT,
+        #    args=["extra"]
+        #)
 
         # ---------- SILVER ----------
         silver_vocation = spark_task(
@@ -158,22 +159,22 @@ def lakehouse_pipeline():
             args=["vocation"]
         )
 
-        silver_skills = spark_task(
-            "silver_skills",
-            SILVER_SCRIPT,
-            args=["skills"]
-        )
+        #silver_skills = spark_task(
+        #    "silver_skills",
+        #    SILVER_SCRIPT,
+        #    args=["skills"]
+        #)
 
-        silver_extra = spark_task(
-            "silver_extra",
-            SILVER_SCRIPT,
-            args=["extra"]
-        )
+        #silver_extra = spark_task(
+        #    "silver_extra",
+        #    SILVER_SCRIPT,
+        #    args=["extra"]
+        #)
 
         # bronze[i] > silver[i]
         bronze_vocation >> silver_vocation
-        bronze_skills >> silver_skills
-        bronze_extra >> silver_extra
+        #bronze_skills >> silver_skills
+        #bronze_extra >> silver_extra
 
     # Dependências principais da DAG
     wait_for_landing >> start_pipeline >> lakehouse_group >> end_pipeline

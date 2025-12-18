@@ -32,3 +32,10 @@ ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python3
 
 RUN chown -R spark:spark /opt/spark
 USER spark
+
+
+#jars/
+# ├─ iceberg-spark-runtime-3.5_2.12-1.5.2.jar
+# ├─ nessie-spark-extensions-3.5_2.12-0.90.4.jar
+# ├─ iceberg-aws-1.5.2.jar
+# └─ hadoop-aws-3.3.4.jar
