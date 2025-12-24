@@ -29,7 +29,7 @@ def test_scraper_mock_from_file(monkeypatch):
         return MockResponse(html_content)
 
     # Patch requests.get
-    monkeypatch.setattr("landing.extract.requests.get", mock_get)
+    monkeypatch.setattr("landing.scraper.requests.get", mock_get)
 
     # Chama o fetcher normalmente (sem requests reais)
     html = fetcher.get("http://fakeurl.com")
@@ -47,3 +47,4 @@ def test_scraper_mock_from_file(monkeypatch):
     assert df["Rank"].notnull().all(), "Coluna 'Rank' contém valores nulos"
 
     assert len(df) == 50, f"Número de linhas incorreto: {len(df)}"
+
