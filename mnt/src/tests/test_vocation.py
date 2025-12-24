@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from landing.extract import VocationScraper, BuscadorPagina, HighScoreParser
+from landing.scraper import VocationScraper, BuscadorPagina, HighScoreParser
 
 # Mock dataframe
 MOCK_DF = pd.DataFrame({
@@ -62,3 +62,4 @@ def test_none(mock_processar_paginas):
     df = scraper.get_data(1)
     df["Vocation"] = "None"
     validate_df(df, "None")
+
