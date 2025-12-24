@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from landing.extract import BuscadorPagina, HighScoreParser
+from landing.scraper import BuscadorPagina, HighScoreParser
 
 # Caminho do arquivo HTML local
 HTML_FILE = os.path.join(os.path.dirname(__file__), "html/highscore_page.html")
@@ -45,4 +45,5 @@ def test_scraper_mock_from_file(monkeypatch):
 
     # Testes de conteúdo
     assert df["Rank"].notnull().all(), "Coluna 'Rank' contém valores nulos"
+
     assert len(df) == 50, f"Número de linhas incorreto: {len(df)}"
