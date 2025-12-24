@@ -16,7 +16,7 @@ class CSVLanding:
 
     O padrão de diretórios segue a convenção:
     ```
-    /mnt/minio/landing/year=YYYY/month=MM/day=DD/<category_dir>/<dataset_name>.csv
+    /mnt/minio/lakehouse/landing/year=YYYY/month=MM/day=DD/<category_dir>/<dataset_name>.csv
     ```
 
     Attributes:
@@ -24,13 +24,13 @@ class CSVLanding:
         today (datetime): Data atual para particionamento.
     """
 
-    def __init__(self, base_dir: str = "/mnt/minio/landing"):
+    def __init__(self, base_dir: str = "/mnt/minio/lakehouse/landing"):
         """
         Inicializa o gerenciador de escrita de CSVs na camada Landing.
 
         Args:
             base_dir (str, optional): Diretório base onde os arquivos serão salvos.
-                Padrão: "/mnt/minio/landing".
+                Padrão: "/mnt/minio/lakehouse/landing".
         """
         self.today = datetime.today()
         self.base_dir = base_dir
@@ -55,7 +55,7 @@ class CSVLanding:
             >>> writer = CSVLanding()
             >>> result = writer.write(df, category_dir="experience", dataset_name="druid")
             >>> print(result["path"])
-            '/mnt/minio/landing/year=2025/month=11/day=10/experience/druid.csv'
+            '/mnt/minio/lakehouse/landing/year=2025/month=11/day=10/experience/druid.csv'
         """
         if df is None or df.empty:
             logger.warning("Tentativa de salvar DataFrame vazio — operação cancelada.")
@@ -120,3 +120,4 @@ def validate_csv(df: pd.DataFrame, expected_columns=None, min_rows: int = 1) -> 
 
     logger.info(f"DataFrame validado com sucesso ({len(df)} linhas).")
     return True
+
