@@ -1,6 +1,6 @@
 import logging
 from .utility import CSVLanding, validate_csv
-from .extract import BuscadorPagina, HighScoreParser, VocationScraper, CategoryScraper
+from .scraper import BuscadorPagina, HighScoreParser, VocationScraper, CategoryScraper
 
 
 # Configuração de Logging
@@ -138,3 +138,4 @@ def extract_category(category: str) -> str:
     except Exception as e:
         logger.error(f"Erro durante extração da categoria '{category}': {e}", exc_info=True)
         return None
+
