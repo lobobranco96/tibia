@@ -58,9 +58,15 @@ services:
       done;
       echo 'MinIO está pronto. Iniciando configuração dos buckets.';
       mc mb myminio/lakehouse;
-      echo 'Buckets criados com sucesso.';
+      echo 'Bucke criados com sucesso.';
       mc anonymous set public myminio/lakehouse;
       echo 'Políticas de acesso definidas para público.';
+      
+      mc cp /dev/null myminio/lakehouse/landing/placeholder
+      mc cp /dev/null myminio/lakehouse/bronze/placeholder
+      mc cp /dev/null myminio/lakehouse/silver/placeholder
+      mc cp /dev/null myminio/lakehouse/gold/placeholder
+      echo 'camadas criadas com sucesso.';
       "
     <<: *default_config
 
@@ -156,3 +162,4 @@ networks:
   lakehouse_network:
 
     driver: bridge
+
