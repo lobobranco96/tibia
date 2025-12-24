@@ -18,7 +18,7 @@ A camada Landing é responsável pela extração e ingestão de dados brutos do 
 
 ### Principais módulos
 
-- `extract.py`: Este módulo realiza a coleta de highscores do site oficial do Tibia.
+- `scraper.py`: Este módulo realiza a coleta de highscores do site oficial do Tibia.
   - Class Highscore:
     - Implementa o scraping da tabela principal de highscores do Tibia utilizando requests e BeautifulSoup. Retorna os dados em um DataFrame do pandas.
   - Class Vocation:
@@ -32,7 +32,7 @@ A camada Landing é responsável pela extração e ingestão de dados brutos do 
     ```txt
     minio = CSVLanding()
     s3_path = minio.write(df, category_dir="experience", dataset_name="druid")
-    # s3_path -> 's3a://landing/year=2025/month=10/day=17/experience/druid.csv'
+    # s3_path -> 's3a://lakehouse/landing/year=2025/month=10/day=17/experience/druid.csv'
     ```
     
 - `Landing_app.py`: ponto de entrada principal para o fluxo da camada Bronze.
