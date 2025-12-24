@@ -73,6 +73,7 @@ services:
   postgres_nessie:
     image: postgres:16
     container_name: postgres_nessie
+    <<: *default_config
     environment:
       POSTGRES_USER: nessie
       POSTGRES_PASSWORD: nessie
@@ -80,12 +81,10 @@ services:
     volumes:
       - lakehouse_pg_nessie_vol:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nessie"]
+      test: ["CMD-SHELL", "pg_isready -h localhost -U nessie"]
       interval: 5s
       timeout: 5s
-      retries: 5
-    networks:
-      - lakehouse_network
+      retries: 10
 
   nessie:
     image: ghcr.io/projectnessie/nessie:0.90.4
@@ -112,6 +111,7 @@ services:
       - lakehouse_network
 
   notebook:
+    image: spark-custom:3.5.3
     build: ../docker/notebook
     container_name: notebook
     <<: *default_config
