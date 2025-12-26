@@ -56,9 +56,7 @@ class Bronze:
         self.spark = spark
         self.date_str = date_str
 
-    # ============================================================
     #   MÉTODO: VOCATION
-    # ============================================================
     def vocation(self):
         """
         Executa o job Bronze para dados de vocação (vocation).
@@ -76,7 +74,7 @@ class Bronze:
         """
 
         # Namespace
-        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.vocation")
+        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze")
 
         # Criação da tabela Iceberg
         self.spark.sql("""
@@ -106,7 +104,7 @@ class Bronze:
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
         partition = f"year={today_date.year}/month={today_date.month}/day={today_date.day}"
 
-        path = f"s3a://landing/{partition}/vocation/*.csv"
+        path = f"s3a://lakehouse/landing/{partition}/experience/"
         logging.info(f"Lendo dados de: {path}")
 
         # Lê arquivo CSV
@@ -157,9 +155,7 @@ class Bronze:
         else:
             logging.warning("Nenhum registro encontrado para gravar na Bronze.")
 
-    # ============================================================
     #   MÉTODO: SKILLS
-    # ============================================================
     def skills(self):
         """
         Executa o job Bronze para dados de skills.
@@ -170,7 +166,7 @@ class Bronze:
         Tabela criada: nessie.bronze.skills
         """
 
-        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.skills")
+        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze")
 
         self.spark.sql("""
         CREATE TABLE IF NOT EXISTS nessie.bronze.skills (
@@ -198,7 +194,7 @@ class Bronze:
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
         partition = f"year={today_date.year}/month={today_date.month}/day={today_date.day}"
 
-        path = f"s3a://landing/{partition}/skills/*.csv"
+        path = f"s3a://lakehouse/landing/{partition}/skills/"
         logging.info(f"Lendo dados de: {path}")
 
         df_raw = self.spark.read.csv(path, header=True)
@@ -241,9 +237,7 @@ class Bronze:
         else:
             logging.warning("Nenhum registro encontrado na Bronze Skills.")
 
-    # ============================================================
     #   MÉTODO: EXTRA
-    # ============================================================
     def extra(self):
         """
         Executa o job Bronze Extra, consolidando e normalizando múltiplos
@@ -254,7 +248,7 @@ class Bronze:
         Tabela criada: nessie.bronze.extra
         """
 
-        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze.extra")
+        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze")
 
         self.spark.sql("""
         CREATE TABLE IF NOT EXISTS nessie.bronze.extra (
@@ -283,9 +277,9 @@ class Bronze:
 
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
         partition = f"year={today_date.year}/month={today_date.month}/day={today_date.day}"
-        path = f"s3a://landing/{partition}/extra/*.csv"
-
-        logging.info(f"Lendo arquivos CSV de: {path}")
+        
+        path = f"s3a://lakehouse/landing/{partition}/skills/"
+        logging.info(f"Lendo dados de: {path}")
 
         df_raw = (
             self.spark.read.option("header", True)
