@@ -92,9 +92,10 @@ class CSVLanding:
         logger.info(f"Arquivo salvo na Landing: s3a://{self.bucket}/{key}")
 
         return {
-            "path": f"s3a://{self.bucket}/{key}",
-            "rows": len(df),
-            "columns": df.columns.tolist(),
+          "bucket": self.bucket_name,
+          "key": key,
+          "rows": len(df),
+          "columns": list(df.columns),
             "timestamp": datetime.now().isoformat()
         }
 
