@@ -24,7 +24,6 @@ x-spark-worker-default: &spark_worker_default
   networks:
     - lakehouse_network
 
-
 services:
   spark-master:
     build: ../docker/spark
@@ -34,7 +33,7 @@ services:
       - SPARK_MODE=master
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
     volumes:
-      - ../mnt/src:/opt/airflow/dags/src
+      - ../mnt/src/jobs:/spark
     ports:
       - "9090:8080"
       - "7077:7077"
@@ -57,3 +56,6 @@ networks:
   lakehouse_network:
     name: lakehouse_network
 
+networks:
+  lakehouse_network:
+    driver: bridge
