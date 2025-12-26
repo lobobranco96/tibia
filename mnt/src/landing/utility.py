@@ -1,12 +1,16 @@
-from datetime import datetime
+import io
 import os
+from datetime import datetime
+import boto3
 import logging
 import pandas as pd
 
 #  CONFIG GLOBAL - Variáveis de ambiente e logger
 logger = logging.getLogger(__name__)
 
-
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+S3_ENDPOINT = os.getenv("S3_ENDPOINT")
 
 #  CLASSE: CSVLanding
 class CSVLanding:
@@ -24,16 +28,21 @@ class CSVLanding:
         today (datetime): Data atual para particionamento.
     """
 
-    def __init__(self, base_dir: str = "/mnt/minio/lakehouse/landing"):
+    def __init__(self):
+        self.today = datetime.today()
+        self.bucket = "lakehouse"
+        self.prefix = "landing"
         """
         Inicializa o gerenciador de escrita de CSVs na camada Landing.
 
-        Args:
-            base_dir (str, optional): Diretório base onde os arquivos serão salvos.
-                Padrão: "/mnt/minio/lakehouse/landing".
         """
-        self.today = datetime.today()
-        self.base_dir = base_dir
+        self.s3 = boto3.client(
+            "s3",
+            endpoint_url=S3_ENDPOINT,
+            aws_access_key_id=AWS_ACCESS_KEY,
+            aws_secret_access_key=AWS_SECRET_KEY
+            )
+            
 
     def write(self, df: pd.DataFrame, category_dir: str, dataset_name: str) -> dict:
         """
@@ -62,21 +71,31 @@ class CSVLanding:
             return None
 
         partition = f"year={self.today:%Y}/month={self.today:%m}/day={self.today:%d}"
-        landing_path = os.path.join(self.base_dir, partition, category_dir)
-        os.makedirs(landing_path, exist_ok=True)
 
-        file_path = os.path.join(landing_path, f"{dataset_name}.csv")
+        key = (
+            f"{self.prefix}/"
+            f"{partition}/"
+            f"{category_dir}/"
+            f"{dataset_name}.csv"
+        )
 
-        # Salva o arquivo CSV
-        df.to_csv(file_path, index=False, encoding="utf-8")
-        logger.info(f"Arquivo salvo na camada Landing: {file_path} "
-                    f"({len(df)} linhas, {len(df.columns)} colunas)")
+        buffer = io.StringIO()
+        df.to_csv(buffer, index=False, encoding="utf-8")
+
+        self.s3.put_object(
+            Bucket=self.bucket,
+            Key=key,
+            Body=buffer.getvalue(),
+            ContentType="text/csv"
+        )
+
+        logger.info(f"Arquivo salvo na Landing: s3a://{self.bucket}/{key}")
 
         return {
-            "path": file_path,
+            "path": f"s3a://{self.bucket}/{key}",
             "rows": len(df),
             "columns": df.columns.tolist(),
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat()
         }
 
 
