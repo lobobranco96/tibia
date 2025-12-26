@@ -39,7 +39,7 @@ def extract_vocation(vocation: str) -> str:
         }
 
         vocation = vocation.lower().strip()
-        vocation_id = valid_vocations.get(vocation)
+        vocation_id = valid_vocation    s.get(vocation)
 
         if vocation_id is None:
             logger.warning(
@@ -58,10 +58,10 @@ def extract_vocation(vocation: str) -> str:
         if df.empty:
             raise ValueError("Nenhum dado retornado para a vocação especificada.")
 
-        # # Validação de schema esperado
-        # expected_columns = ["Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"]
-        # if not validate_csv(df, expected_columns=expected_columns):
-        #     raise ValueError(f"Validação falhou para vocação '{vocation}'")
+         # Validação de schema esperado
+        expected_columns = ["Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"]
+        if not validate_csv(df, expected_columns=expected_columns):
+            raise ValueError(f"Validação falhou para vocação '{vocation}'")
 
         # Armazena no MinIO (ou camada landing)
         logger.info(f"Extração concluída para vocação '{vocation}'. Enviando ao MinIO...")
