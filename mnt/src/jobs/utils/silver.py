@@ -67,7 +67,7 @@ class Silver:
         """
         try:
             # Configuração e criação de namespace
-            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver.vocation")
+            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver")
 
             # Criação da tabela
             self.spark.sql("""
@@ -179,7 +179,7 @@ class Silver:
         Em caso de falha, loga a exceção e encerra o processo.
         """
         try:
-            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver.skills")
+            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver")
 
             # Criar tabela Silver
             self.spark.sql("""
@@ -268,4 +268,118 @@ class Silver:
 
         except Exception as e:
             logging.exception(f"Falha no job Silver (skills): {str(e)}")
+            sys.exit(1)
+
+    # =======================================================================
+    # EXTRA
+    # =======================================================================
+    def extra(self):
+        """
+        Processa a camada Silver do domínio 'extra' aplicando SCD Type 2.
+
+        Este domínio consolida dados complementares (achievements, títulos,
+        rankings alternativos etc.), mantendo histórico de alterações.
+
+        Chave de negócio:
+            (name, world, category, title)
+
+        Campos versionados:
+            - points
+            - level
+            - vocation
+        """
+        try:
+            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver")
+
+            # Criação da tabela Silver Extra
+            self.spark.sql("""
+            CREATE TABLE IF NOT EXISTS nessie.silver.extra (
+                name STRING,
+                world STRING,
+                category STRING,
+                title STRING,
+                vocation STRING,
+                level INT,
+                points INT,
+                source_file STRING,
+                ingestion_time TIMESTAMP,
+                start_date TIMESTAMP,
+                end_date TIMESTAMP,
+                is_current BOOLEAN
+            )
+            USING iceberg
+            PARTITIONED BY (world, days(start_date), bucket(8, name))
+            TBLPROPERTIES (
+                'format-version' = '2',
+                'write.format.default' = 'parquet',
+                'write.metadata.compression' = 'gzip',
+                'write.delete.mode' = 'merge-on-read'
+            )
+            """)
+
+            logging.info("Tabela Silver 'extra' inicializada com sucesso.")
+
+            # Leitura da Bronze
+            df_bronze = self.spark.read.table("nessie.bronze.extra")
+
+            if df_bronze.head(1) == []:
+                logging.warning("Nenhum dado encontrado na Bronze Extra. Encerrando execução.")
+                return
+
+            # Registros novos
+            df_new = (
+                df_bronze
+                .withColumn("start_date", F.current_timestamp())
+                .withColumn("end_date", F.lit(None).cast("timestamp"))
+                .withColumn("is_current", F.lit(True))
+            )
+
+            df_new.createOrReplaceTempView("extra_updates")
+            logging.info("View temporária 'extra_updates' criada com sucesso.")
+
+            # MERGE INTO com SCD Type 2
+            merge_query = """
+            MERGE INTO nessie.silver.extra AS target
+            USING extra_updates AS source
+            ON target.name = source.name
+              AND target.world = source.world
+              AND target.category = source.category
+              AND target.title = source.title
+              AND target.is_current = TRUE
+
+            WHEN MATCHED AND (
+                target.points <> source.points OR
+                target.level <> source.level OR
+                target.vocation <> source.vocation
+            ) THEN
+              UPDATE SET
+                target.end_date = current_timestamp(),
+                target.is_current = FALSE
+
+            WHEN NOT MATCHED BY TARGET THEN
+              INSERT (
+                name, world, category, title, vocation,
+                level, points, source_file,
+                ingestion_time, start_date, end_date, is_current
+              )
+              VALUES (
+                source.name, source.world, source.category, source.title,
+                source.vocation, source.level, source.points, source.source_file,
+                source.ingestion_time, current_timestamp(), NULL, TRUE
+              )
+            """
+
+            self.spark.sql(merge_query)
+            logging.info("MERGE INTO Silver Extra finalizado com sucesso!")
+
+            # Auditoria
+            df_check = self.spark.read.table("nessie.silver.extra")
+            total_rows = df_check.count()
+            current_rows = df_check.filter("is_current = true").count()
+
+            logging.info(f"Total de registros na Silver Extra: {total_rows}")
+            logging.info(f"Registros atuais (is_current = true): {current_rows}")
+
+        except Exception as e:
+            logging.exception(f"Falha no job Silver Extra: {str(e)}")
             sys.exit(1)
