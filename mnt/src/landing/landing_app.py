@@ -1,5 +1,5 @@
 import logging
-from .utility_teste import CSVLanding, validate_csv
+from .utility import CSVLanding, validate_csv
 from .scraper import BuscadorPagina, HighScoreParser, VocationScraper, CategoryScraper
 
 
