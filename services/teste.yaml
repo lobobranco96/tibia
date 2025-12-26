@@ -56,17 +56,13 @@ services:
         echo 'Aguardando MinIO...';
         sleep 5;
       done;
+
       echo 'MinIO está pronto. Iniciando configuração dos buckets.';
       mc mb myminio/lakehouse;
-      echo 'Bucke criados com sucesso.';
+      echo 'Bucket criados com sucesso.';
+
       mc anonymous set public myminio/lakehouse;
       echo 'Políticas de acesso definidas para público.';
-      
-      mc cp /dev/null myminio/lakehouse/landing/placeholder
-      mc cp /dev/null myminio/lakehouse/bronze/placeholder
-      mc cp /dev/null myminio/lakehouse/silver/placeholder
-      mc cp /dev/null myminio/lakehouse/gold/placeholder
-      echo 'camadas criadas com sucesso.';
       "
     <<: *default_config
 
@@ -118,13 +114,13 @@ services:
     ports:
       - 8888:8888
     volumes:
-      - ../mnt/notebooks:/app/
+      - ../mnt/notebooks:/app
+      - ../mnt/src:/app/src/
     environment:
       - NESSIE_URI=http://nessie:19120/api/v1
-      - SPARK_SUBMIT_OPTIONS=--conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 \
-                            --conf spark.hadoop.fs.s3a.path.style.access=true \
-                            --conf spark.hadoop.fs.s3a.access.key=admin \
-                            --conf spark.hadoop.fs.s3a.secret.key=password
+      - PYTHONPATH=/app/src
+      - SPARK_SUBMIT_OPTIONS=--conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 --conf spark.hadoop.fs.s3a.path.style.access=true --conf spark.hadoop.fs.s3a.access.key=admin --conf spark.hadoop.fs.s3a.secret.key=password
+
 
   spark-master:
     build: ../docker/spark
