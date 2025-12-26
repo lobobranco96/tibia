@@ -2,3 +2,8 @@ pyspark==3.5.3
 jupyterlab==4.2.5
 pyiceberg[s3fs,hive]==0.7.1
 ipython_sql
+boto3
+beautifulsoup4 
+requests 
+pandas 
+lxml
