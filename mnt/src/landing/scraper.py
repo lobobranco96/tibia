@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import time
 import random
 from abc import ABC, abstractmethod
+from typing import Optional, List, Dict
 
 # Configuração básica de logging
 logging.basicConfig(
@@ -52,7 +53,8 @@ class BuscadorPagina:
         self.retries = retries
         self.wait_time = wait_time
 
-    def get(self, url: str) -> bytes | None:
+    #def get(self, url: str) -> bytes | None:
+    def get(self, url: str) -> Optional[bytes]:
         """
         Realiza uma requisição HTTP GET com controle de tentativas e tempo de espera.
 
@@ -144,7 +146,8 @@ class BaseScraper(ABC):
         self.fetcher = fetcher
         self.parser = parser
 
-    def processar_paginas(self, lista_paginas: list[str], wait_random: bool = True) -> pd.DataFrame:
+    #def processar_paginas(self, lista_paginas: list[str], wait_random: bool = True) -> pd.DataFrame:
+    def processar_paginas(self, lista_paginas: List[str], wait_random: bool = True) -> pd.DataFrame:
         """
         Percorre uma lista de URLs, faz o download do HTML, processa e concatena os resultados.
 
