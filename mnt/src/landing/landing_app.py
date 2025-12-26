@@ -1,5 +1,5 @@
 import logging
-from .utility_teste import CSVLanding#, validate_csv
+from .utility_teste import CSVLanding, validate_csv
 from .scraper import BuscadorPagina, HighScoreParser, VocationScraper, CategoryScraper
 
 
@@ -39,7 +39,7 @@ def extract_vocation(vocation: str) -> str:
         }
 
         vocation = vocation.lower().strip()
-        vocation_id = valid_vocation    s.get(vocation)
+        vocation_id = valid_vocations.get(vocation)
 
         if vocation_id is None:
             logger.warning(
