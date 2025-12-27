@@ -142,12 +142,10 @@ class Silver:
             THEN UPDATE SET
                 t.end_date = current_timestamp(),
                 t.is_current = FALSE
-    
             WHEN NOT MATCHED
             THEN INSERT (
                 name, world, vocation, level, experience, world_type,
-                ingestion_time, start_date, end_date, is_current, hash_diff
-            )
+                ingestion_time, start_date, end_date, is_current, hash_diff )
             VALUES (
                 s.name, s.world, s.vocation, s.level, s.experience, s.world_type,
                 s.ingestion_time, current_timestamp(), NULL, TRUE, s.hash_diff
@@ -174,10 +172,8 @@ class Silver:
     def skills(self):
         """
         Processa a camada Silver do domínio 'skills' aplicando SCD Type 2.
-
         O processo segue a mesma lógica do domínio 'vocation', porém adaptado
         para colunas específicas de skills de personagens.
-
         Fluxo executado:
         ----------------
         - Criação do namespace e tabela Silver
@@ -390,13 +386,11 @@ class Silver:
                  AND target.category = source.category
                  AND target.title <=> source.title
                  AND target.is_current = TRUE
-    
                 WHEN MATCHED
                  AND target.hash_diff <> source.hash_diff
                 THEN UPDATE SET
                   target.end_date = current_timestamp(),
                   target.is_current = FALSE
-    
                 WHEN NOT MATCHED
                 THEN INSERT (
                   name, world, category, title,
