@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from airflow.decorators import dag
+from datetime import timedelta
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.operators.bash import BashOperator
@@ -91,7 +92,7 @@ def spark_task(task_id, app_path, args=None):
     dag_id="lakehouse_pipeline",
     description="Lakehouse pipeline: processa dados da camada Bronze até Silver utilizando Spark + Iceberg.",
     default_args=default_args,
-    start_date=datetime(2025, 11, 17),
+    start_date=datetime(2025, 12, 27),
     tags=["tibia", "lakehouse", "etl"]
 )
 def lakehouse_pipeline():
@@ -108,76 +109,90 @@ def lakehouse_pipeline():
     """
 
     # Espera a DAG de landing concluir
-    wait_for_landing = ExternalTaskSensor(
-        task_id="wait_for_landing_dag",
-        external_dag_id="tibia_highscores_pipeline",
-        external_task_id=None,
+
+    wait_vocation = ExternalTaskSensor(
+        task_id="wait_for_vocation_landing",
+        external_dag_id="landing_highscores_pipeline",
+        external_task_id="extract_vocation.vocation_done",
         mode="reschedule",
         poke_interval=60,
         timeout=60 * 60 * 3,
-        soft_fail=False,
+        check_existence=True
     )
 
-    start_pipeline = BashOperator(
-        task_id="start_pipeline",
-        bash_command="echo 'Iniciando a pipeline do lakehouse.'"
+    wait_skills = ExternalTaskSensor(
+        task_id="wait_for_skills_landing",
+        external_dag_id="landing_highscores_pipeline",
+        external_task_id="extract_skills.skills_done",
+        execution_delta=timedelta(minutes=0),
+        mode="reschedule",
+        poke_interval=60,
+        timeout=60 * 60 * 3,
+        check_existence=True
     )
 
-    end_pipeline = BashOperator(
-        task_id="end_pipeline",
-        bash_command="echo 'Finalizando a pipeline.'"
+    wait_extra = ExternalTaskSensor(
+        task_id="wait_for_extra_landing",
+        external_dag_id="landing_highscores_pipeline",
+        external_task_id="extract_extra.extra_done",
+        mode="reschedule",
+        poke_interval=60,
+        timeout=60 * 60 * 3,
+        check_existence=True
     )
 
-    # -----------------------------
-    #   TASK GROUP: BRONZE + SILVER
-    # -----------------------------
-    with TaskGroup(group_id="lakehouse") as lakehouse_group:
+    with TaskGroup(group_id="vocation_lakehouse") as vocation_group:
 
-        # ---------- BRONZE ----------
         bronze_vocation = spark_task(
             "bronze_vocation",
             BRONZE_SCRIPT,
-            args=["vocation", "--date", "2025-07-12"]
+            args=["vocation", "--date", "2025-12-27"]
         )
 
-        #bronze_skills = spark_task(
-        #    "bronze_skills",
-        #    BRONZE_SCRIPT,
-        #    args=["skills"]
-        #)
-
-        #bronze_extra = spark_task(
-        #    "bronze_extra",
-        #    BRONZE_SCRIPT,
-        #    args=["extra"]
-        #)
-
-        # ---------- SILVER ----------
         silver_vocation = spark_task(
             "silver_vocation",
             SILVER_SCRIPT,
             args=["vocation"]
         )
 
-        #silver_skills = spark_task(
-        #    "silver_skills",
-        #    SILVER_SCRIPT,
-        #    args=["skills"]
-        #)
-
-        #silver_extra = spark_task(
-        #    "silver_extra",
-        #    SILVER_SCRIPT,
-        #    args=["extra"]
-        #)
-
-        # bronze[i] > silver[i]
         bronze_vocation >> silver_vocation
-        #bronze_skills >> silver_skills
-        #bronze_extra >> silver_extra
+
+    with TaskGroup(group_id="skills_lakehouse") as skills_group:
+
+        bronze_skills = spark_task(
+            "bronze_skills",
+            BRONZE_SCRIPT,
+            args=["skills", "--date", "2025-12-27"]
+        )
+
+        silver_skills = spark_task(
+            "silver_skills",
+            SILVER_SCRIPT,
+            args=["skills"]
+        )
+
+        bronze_skills >> silver_skills
+
+    with TaskGroup(group_id="extra_lakehouse") as extra_group:
+
+        bronze_extra = spark_task(
+            "bronze_extra",
+            BRONZE_SCRIPT,
+            args=["extra", "--date", "2025-12-27"]
+        )
+
+        silver_extra = spark_task(
+            "silver_extra",
+            SILVER_SCRIPT,
+            args=["extra"]
+        )
+
+        bronze_extra >> silver_extra
 
     # Dependências principais da DAG
-    wait_for_landing >> start_pipeline >> lakehouse_group >> end_pipeline
+    wait_vocation >> vocation_group
+    wait_skills >> skills_group
+    wait_extra >> extra_group
 
 
 lakehouse = lakehouse_pipeline()

@@ -48,7 +48,7 @@ def landing_highscores_pipeline():
         def extract_monk():
             return extract_vocation("monk")
 
-        [
+        extract_tasks = [
             extract_none(),
             extract_knight(),
             extract_paladin(),
@@ -56,6 +56,9 @@ def landing_highscores_pipeline():
             extract_druid(),
             extract_monk(),
         ]
+        vocation_done = EmptyOperator(task_id="vocation_done")
+
+        extract_tasks >> vocation_done
 
     # TaskGroup: EXTRAÇÃO DE SKILLS
     with TaskGroup(group_id="extract_skills") as extract_skills_group:
@@ -88,7 +91,7 @@ def landing_highscores_pipeline():
         def extract_fist():
             return extract_category("fist")
 
-        [
+        extract_tasks = [
             extract_axe(),
             extract_sword(),
             extract_magic(),
@@ -97,6 +100,10 @@ def landing_highscores_pipeline():
             extract_shielding(),
             extract_fist()
         ]
+
+        skills_done = EmptyOperator(task_id="skills_done")
+
+        extract_tasks >> skills_done
 
     # ============================================================
     # TaskGroup: EXTRAÇÃO DE EXTRA
@@ -131,7 +138,7 @@ def landing_highscores_pipeline():
         def extract_goshnair():
             return extract_category("goshnair")
 
-        [
+        extract_tasks = [
             extract_achievements(),
             extract_fishing(),
             extract_loyalty(),
@@ -141,11 +148,14 @@ def landing_highscores_pipeline():
             extract_goshnair(),
         ]
 
+        extra_done = EmptyOperator(task_id="extra_done")
+
+        extract_tasks >> extra_done
 
     # Dependências
 
-    end = EmptyOperator(task_id="end")
-
-    [extract_vocation_group, extract_skills_group, extract_extra_group] >> end
+    extract_vocation_group
+    extract_skills_group
+    extract_extra_group
 
 landing = landing_highscores_pipeline()
