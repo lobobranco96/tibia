@@ -73,22 +73,21 @@ class Silver:
             self.spark.sql("""
             CREATE TABLE IF NOT EXISTS nessie.silver.vocation (
                 name STRING,
-                vocation STRING,
                 world STRING,
+                vocation STRING,
                 level INT,
                 experience LONG,
                 world_type STRING,
                 ingestion_time TIMESTAMP,
                 start_date TIMESTAMP,
                 end_date TIMESTAMP,
-                is_current BOOLEAN
+                is_current BOOLEAN,
+                hash_diff STRING
             )
             USING iceberg
             PARTITIONED BY (world, days(start_date), bucket(8, name))
             TBLPROPERTIES (
                 'format-version' = '2',
-                'write.format.default' = 'parquet',
-                'write.metadata.compression' = 'gzip',
                 'write.delete.mode' = 'merge-on-read'
             )
             """)
@@ -96,7 +95,18 @@ class Silver:
             logging.info("Tabela Silver inicializada com sucesso.")
 
             # Leitura Bronze
-            df_bronze = self.spark.read.table("nessie.bronze.vocation")
+            df_bronze_all = self.spark.read.table("nessie.bronze.vocation")
+    
+            last_batch_id = (
+                df_bronze_all
+                .orderBy(F.col("ingestion_time").desc())
+                .select("batch_id")
+                .first()["batch_id"]
+            )
+
+            logging.info(f"Processando batch_id: {last_batch_id}")
+            
+            df_bronze = df_bronze_all.filter(F.col("batch_id") == last_batch_id)
 
             if df_bronze.head(1) == []:
                 logging.warning("Nenhum dado encontrado na Bronze. Encerrando execução.")
@@ -105,6 +115,19 @@ class Silver:
             # Novos registros
             df_new = (
                 df_bronze
+                .withColumn(
+                    "hash_diff",
+                    F.sha2(
+                        F.concat_ws(
+                            "||",
+                            F.col("vocation"),
+                            F.col("level").cast("string"),
+                            F.col("experience").cast("string"),
+                            F.col("world_type")
+                        ),
+                        256
+                    )
+                )
                 .withColumn("start_date", F.current_timestamp())
                 .withColumn("end_date", F.lit(None).cast("timestamp"))
                 .withColumn("is_current", F.lit(True))
@@ -115,30 +138,26 @@ class Silver:
 
             # MERGE INTO (SCD2)
             merge_query = """
-            MERGE INTO nessie.silver.vocation AS target
-            USING vocation_updates AS source
-            ON target.name = source.name AND target.is_current = TRUE
-
-            WHEN MATCHED AND (
-                target.level <> source.level OR
-                target.experience <> source.experience OR
-                target.vocation <> source.vocation OR
-                target.world <> source.world OR
-                target.world_type <> source.world_type
-            ) THEN
-              UPDATE SET
-                target.end_date = current_timestamp(),
-                target.is_current = FALSE
-
-            WHEN NOT MATCHED BY TARGET THEN
-              INSERT (
-                name, vocation, world, level, experience, world_type,
-                ingestion_time, start_date, end_date, is_current
-              )
-              VALUES (
-                source.name, source.vocation, source.world, source.level, source.experience,
-                source.world_type, source.ingestion_time, current_timestamp(), NULL, TRUE
-              )
+            MERGE INTO nessie.silver.vocation t
+            USING vocation_updates s
+            ON  t.name = s.name
+            AND t.world = s.world
+            AND t.is_current = TRUE
+    
+            WHEN MATCHED AND t.hash_diff <> s.hash_diff
+            THEN UPDATE SET
+                t.end_date = current_timestamp(),
+                t.is_current = FALSE
+    
+            WHEN NOT MATCHED
+            THEN INSERT (
+                name, world, vocation, level, experience, world_type,
+                ingestion_time, start_date, end_date, is_current, hash_diff
+            )
+            VALUES (
+                s.name, s.world, s.vocation, s.level, s.experience, s.world_type,
+                s.ingestion_time, current_timestamp(), NULL, TRUE, s.hash_diff
+            )
             """
 
             self.spark.sql(merge_query)
@@ -185,30 +204,40 @@ class Silver:
             self.spark.sql("""
             CREATE TABLE IF NOT EXISTS nessie.silver.skills (
                 name STRING,
-                vocation STRING,
                 world STRING,
+                category STRING,
+                vocation STRING,
                 level INT,
                 skill_level INT,
-                category STRING,
                 ingestion_time TIMESTAMP,
                 start_date TIMESTAMP,
                 end_date TIMESTAMP,
-                is_current BOOLEAN
+                is_current BOOLEAN,
+                hash_diff STRING
             )
             USING iceberg
             PARTITIONED BY (world, days(start_date), bucket(8, name))
             TBLPROPERTIES (
-              'format-version' = '2',
-              'write.format.default' = 'parquet',
-              'write.metadata.compression' = 'gzip',
-              'write.delete.mode' = 'merge-on-read'
+                'format-version' = '2',
+                'write.delete.mode' = 'merge-on-read'
             )
             """)
 
             logging.info("Tabela Silver 'skills' inicializada com sucesso.")
 
             # Leitura Bronze
-            df_bronze = self.spark.read.table("nessie.bronze.skills")
+            df_bronze_all = self.spark.read.table("nessie.bronze.skills")
+
+            last_batch_id = (
+                df_bronze_all
+                .orderBy(F.col("ingestion_time").desc())
+                .select("batch_id")
+                .first()["batch_id"]
+            )
+            
+            logging.info(f"Processando batch_id: {last_batch_id}")
+            
+            df_bronze = df_bronze_all.filter(F.col("batch_id") == last_batch_id)
 
             if df_bronze.head(1) == []:
                 logging.warning("Nenhum dado encontrado na Bronze. Encerrando execução.")
@@ -217,6 +246,18 @@ class Silver:
             # Novos registros
             df_new = (
                 df_bronze
+                .withColumn(
+                    "hash_diff",
+                    F.sha2(
+                        F.concat_ws(
+                            "||",
+                            F.col("vocation"),
+                            F.col("level").cast("string"),
+                            F.col("skill_level").cast("string")
+                        ),
+                        256
+                    )
+                )
                 .withColumn("start_date", F.current_timestamp())
                 .withColumn("end_date", F.lit(None).cast("timestamp"))
                 .withColumn("is_current", F.lit(True))
@@ -227,32 +268,27 @@ class Silver:
 
             # MERGE (SCD2)
             merge_query = """
-            MERGE INTO nessie.silver.skills AS target
-            USING skills_updates AS source
-            ON target.name = source.name
-              AND target.category = source.category
-              AND target.is_current = TRUE
-
-            WHEN MATCHED AND (
-                target.level <> source.level OR
-                target.skill_level <> source.skill_level OR
-                target.vocation <> source.vocation OR
-                target.world <> source.world
-            ) THEN
-              UPDATE SET
-                target.end_date = current_timestamp(),
-                target.is_current = FALSE
-
-            WHEN NOT MATCHED BY TARGET THEN
-              INSERT (
-                name, vocation, world, level, skill_level, category,
-                ingestion_time, start_date, end_date, is_current
-              )
-              VALUES (
-                source.name, source.vocation, source.world,
-                source.level, source.skill_level, source.category,
-                source.ingestion_time, current_timestamp(), NULL, TRUE
-              )
+            MERGE INTO nessie.silver.skills t
+            USING skills_updates s
+            ON  t.name = s.name
+            AND t.world = s.world
+            AND t.category = s.category
+            AND t.is_current = TRUE
+    
+            WHEN MATCHED AND t.hash_diff <> s.hash_diff
+            THEN UPDATE SET
+                t.end_date = current_timestamp(),
+                t.is_current = FALSE
+    
+            WHEN NOT MATCHED
+            THEN INSERT (
+                name, world, category, vocation, level, skill_level,
+                ingestion_time, start_date, end_date, is_current, hash_diff
+            )
+            VALUES (
+                s.name, s.world, s.category, s.vocation, s.level, s.skill_level,
+                s.ingestion_time, current_timestamp(), NULL, TRUE, s.hash_diff
+            )
             """
 
             self.spark.sql(merge_query)
@@ -276,13 +312,10 @@ class Silver:
     def extra(self):
         """
         Processa a camada Silver do domínio 'extra' aplicando SCD Type 2.
-
-        Este domínio consolida dados complementares (achievements, títulos,
-        rankings alternativos etc.), mantendo histórico de alterações.
-
+    
         Chave de negócio:
             (name, world, category, title)
-
+    
         Campos versionados:
             - points
             - level
@@ -290,7 +323,7 @@ class Silver:
         """
         try:
             self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver")
-
+    
             # Criação da tabela Silver Extra
             self.spark.sql("""
             CREATE TABLE IF NOT EXISTS nessie.silver.extra (
@@ -305,7 +338,8 @@ class Silver:
                 ingestion_time TIMESTAMP,
                 start_date TIMESTAMP,
                 end_date TIMESTAMP,
-                is_current BOOLEAN
+                is_current BOOLEAN,
+                hash_diff STRING
             )
             USING iceberg
             PARTITIONED BY (world, days(start_date), bucket(8, name))
@@ -316,70 +350,92 @@ class Silver:
                 'write.delete.mode' = 'merge-on-read'
             )
             """)
-
+    
             logging.info("Tabela Silver 'extra' inicializada com sucesso.")
-
+    
             # Leitura da Bronze
-            df_bronze = self.spark.read.table("nessie.bronze.extra")
-
-            if df_bronze.head(1) == []:
-                logging.warning("Nenhum dado encontrado na Bronze Extra. Encerrando execução.")
-                return
-
-            # Registros novos
-            df_new = (
-                df_bronze
-                .withColumn("start_date", F.current_timestamp())
-                .withColumn("end_date", F.lit(None).cast("timestamp"))
-                .withColumn("is_current", F.lit(True))
+            df_bronze_all = self.spark.read.table("nessie.bronze.extra")
+    
+            last_batch_id = (
+                df_bronze_all
+                .select("batch_id", "ingestion_time")
+                .orderBy(F.col("ingestion_time").desc())
+                .limit(1)
+                .collect()[0]["batch_id"]
             )
-
-            df_new.createOrReplaceTempView("extra_updates")
+    
+            logging.info(f"Processando batch_id: {last_batch_id}")
+    
+            df_bronze = df_bronze_all.filter(F.col("batch_id") == last_batch_id)
+    
+            if df_bronze.head(1) == []:
+                logging.warning("Nenhum dado encontrado na Bronze Extra.")
+                return
+    
+            # Preparação da source (SEM start_date / is_current)
+            df_updates = (
+                df_bronze
+                .withColumn(
+                    "hash_diff",
+                    F.sha2(
+                        F.concat_ws(
+                            "||",
+                            F.col("vocation"),
+                            F.col("level").cast("string"),
+                            F.col("points").cast("string")
+                        ),
+                        256
+                    )
+                )
+            )
+    
+            df_updates.createOrReplaceTempView("extra_updates")
             logging.info("View temporária 'extra_updates' criada com sucesso.")
-
-            # MERGE INTO com SCD Type 2
+    
+            # MERGE SCD Type 2 (CORRETO)
             merge_query = """
-            MERGE INTO nessie.silver.extra AS target
-            USING extra_updates AS source
-            ON target.name = source.name
-              AND target.world = source.world
-              AND target.category = source.category
-              AND target.title = source.title
-              AND target.is_current = TRUE
-
-            WHEN MATCHED AND (
-                target.points <> source.points OR
-                target.level <> source.level OR
-                target.vocation <> source.vocation
-            ) THEN
-              UPDATE SET
-                target.end_date = current_timestamp(),
-                target.is_current = FALSE
-
-            WHEN NOT MATCHED BY TARGET THEN
-              INSERT (
-                name, world, category, title, vocation,
-                level, points, source_file,
-                ingestion_time, start_date, end_date, is_current
-              )
-              VALUES (
-                source.name, source.world, source.category, source.title,
-                source.vocation, source.level, source.points, source.source_file,
-                source.ingestion_time, current_timestamp(), NULL, TRUE
-              )
+                MERGE INTO nessie.silver.extra AS target
+                USING extra_updates AS source
+                ON target.name = source.name
+                 AND target.world = source.world
+                 AND target.category = source.category
+                 AND target.title <=> source.title
+                 AND target.is_current = TRUE
+    
+                WHEN MATCHED
+                 AND target.hash_diff <> source.hash_diff
+                THEN UPDATE SET
+                  target.end_date = current_timestamp(),
+                  target.is_current = FALSE
+    
+                WHEN NOT MATCHED
+                THEN INSERT (
+                  name, world, category, title,
+                  vocation, level, points,
+                  source_file, ingestion_time,
+                  start_date, end_date, is_current, hash_diff
+                )
+                VALUES (
+                  source.name, source.world, source.category, source.title,
+                  source.vocation, source.level, source.points,
+                  source.source_file, source.ingestion_time,
+                  current_timestamp(), NULL, TRUE, source.hash_diff
+                )
             """
-
+    
             self.spark.sql(merge_query)
-            logging.info("MERGE INTO Silver Extra finalizado com sucesso!")
-
+            logging.info("MERGE INTO Silver Extra finalizado com sucesso.")
+    
             # Auditoria
             df_check = self.spark.read.table("nessie.silver.extra")
+    
             total_rows = df_check.count()
             current_rows = df_check.filter("is_current = true").count()
-
-            logging.info(f"Total de registros na Silver Extra: {total_rows}")
+    
+            logging.info(f"Total de registros: {total_rows}")
             logging.info(f"Registros atuais (is_current = true): {current_rows}")
-
+    
         except Exception as e:
             logging.exception(f"Falha no job Silver Extra: {str(e)}")
             sys.exit(1)
+

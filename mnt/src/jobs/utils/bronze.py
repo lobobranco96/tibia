@@ -141,7 +141,7 @@ class Bronze:
             .withColumn("level", F.col("level").cast("int"))
             .withColumn("vocation", F.trim(F.lower("vocation")))
             .withColumn("world", F.trim(F.lower("world")))
-            .dropDuplicates(["name", "world"])
+            .dropDuplicates()
         )
 
         # Compressão padrão Parquet
@@ -199,7 +199,7 @@ class Bronze:
 
         df_raw = self.spark.read.csv(path, header=True)
 
-        colunas_esperadas = {'Rank', 'Name', 'Vocation', 'World', 'Level', 'Skill Level', 'category', 'vocation_id'}
+        colunas_esperadas = {'Rank', 'Name', 'Vocation', 'World', 'Level', 'Skill Level', 'Category'}
         colunas_faltando = colunas_esperadas - set(df_raw.columns)
 
         if colunas_faltando:
@@ -210,12 +210,13 @@ class Bronze:
         logging.info(f"Gerando batch_id: {batch_id}")
 
         df_bronze = (
-            df_raw.drop(["Rank", "vocation_id"])
+            df_raw.drop("Rank")
             .withColumnRenamed("Name", "name")
             .withColumnRenamed("Vocation", "vocation")
             .withColumnRenamed("World", "world")
             .withColumnRenamed("Level", "level")
             .withColumnRenamed("Skill Level", "skill_level")
+            .withColumnRenamed("Category", "category")
             .withColumn("ingestion_time", F.current_timestamp())
             .withColumn("ingestion_date", F.current_date())
             .withColumn("source_system", F.lit("highscore_tibia_page"))
@@ -224,7 +225,7 @@ class Bronze:
             .withColumn("skill_level", F.col("skill_level").cast("int"))
             .withColumn("vocation", F.trim(F.lower("vocation")))
             .withColumn("world", F.trim(F.lower("world")))
-            .dropDuplicates(["name", "world"])
+            .dropDuplicates()
         )
 
         self.spark.conf.set("spark.sql.parquet.compression.codec", "snappy")
@@ -278,14 +279,10 @@ class Bronze:
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
         partition = f"year={today_date.year}/month={today_date.month}/day={today_date.day}"
         
-        path = f"s3a://lakehouse/landing/{partition}/skills/"
+        path = f"s3a://lakehouse/landing/{partition}/extra/"
         logging.info(f"Lendo dados de: {path}")
 
-        df_raw = (
-            self.spark.read.option("header", True)
-            .option("inferSchema", True)
-            .csv(path)
-        )
+        df_raw = self.spark.read.csv(path, header=True)
 
         if df_raw.head(1) == []:
             logging.warning("Nenhum arquivo encontrado em extra/. Encerrando Bronze Extra.")
@@ -322,7 +319,7 @@ class Bronze:
             .withColumn("points", F.col("points").cast("int"))
             .withColumn("vocation", F.trim(F.lower("vocation")))
             .withColumn("world", F.trim(F.lower("world")))
-            .dropDuplicates(["name", "world", "category"])
+            .dropDuplicates()
         )
 
         self.spark.conf.set("spark.sql.parquet.compression.codec", "snappy")

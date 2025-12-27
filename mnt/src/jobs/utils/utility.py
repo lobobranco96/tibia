@@ -19,22 +19,18 @@ def create_spark_session(appname):
         # EXTENSÕES ICEBERG + NESSIE
         .set(
             "spark.sql.extensions",
-            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions,"
-            "org.projectnessie.spark.extensions.NessieSparkSessionExtensions"
+            "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
         )
 
         # REGISTRO DO CATÁLOGO NESSIE
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
-        .set("spark.sql.catalog.nessie.type", "iceberg")
-        .set("spark.sql.catalog.nessie.catalog-impl", "org.apache.iceberg.nessie.NessieCatalog")
+        .set("spark.sql.catalog.nessie.type", "nessie")
         .set("spark.sql.catalog.nessie.io-impl", "org.apache.iceberg.aws.s3.S3FileIO")
         .set("spark.sql.catalog.nessie.uri", NESSIE_URI)
         .set("spark.sql.catalog.nessie.ref", "main")
         .set("spark.sql.catalog.nessie.authentication.type", "NONE")
         .set("spark.sql.catalog.nessie.cache-enabled", "false")
-        .set("spark.sql.catalog.nessie.s3.access-key-id", AWS_ACCESS_KEY)
-        .set("spark.sql.catalog.nessie.s3.secret-access-key", AWS_SECRET_KEY)
-        .set("spark.sql.catalog.nessie.warehouse", "s3a://lakehouse/warehouse/")
+        .set("spark.sql.catalog.nessie.warehouse", "s3a://lakehouse/")
 
         # CONFIG S3 -> ICEBERG
         .set("spark.sql.catalog.nessie.s3.path-style-access", "true")
@@ -46,11 +42,16 @@ def create_spark_session(appname):
         .set("spark.hadoop.fs.s3a.endpoint", S3_ENDPOINT)
         .set("spark.hadoop.fs.s3a.path.style.access", "true")
         .set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        .set(
+                "spark.hadoop.fs.s3a.aws.credentials.provider",
+                "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+            )
+        .set("spark.hadoop.fs.defaultFS", "s3a://lakehouse")
 
         # RECURSOS
-        .set("spark.executor.memory", "512m")
+        .set("spark.executor.memory", "1g")
         .set("spark.executor.cores", "1")
-        .set("spark.driver.memory", "512m")
+        .set("spark.driver.memory", "1g")
         .set("spark.executor.instances", "1")
     )
 

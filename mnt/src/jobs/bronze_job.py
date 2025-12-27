@@ -25,6 +25,7 @@ from datetime import datetime
 from uuid import uuid4
 import logging
 import sys
+from typing import Optional
 
 # -----------------------------------------------------------
 # Configuração de logging
@@ -38,7 +39,7 @@ logging.basicConfig(
 VALID_TYPES = {"vocation", "skills", "extra"}
 
 
-def parse_date_argument() -> str | None:
+def parse_date_argument() -> Optional[str]:
     """
     Lê o argumento opcional '--date' da linha de comando.
 

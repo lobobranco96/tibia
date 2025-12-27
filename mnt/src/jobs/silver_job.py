@@ -19,12 +19,13 @@ Este módulo é utilizado pelo SparkSubmitOperator dentro do Airflow.
 """
 
 from utils.utility import create_spark_session
-from utils.bronze import Silver
+from utils.silver import Silver
 from pyspark.sql import functions as F
 from datetime import datetime
 from uuid import uuid4
 import logging
 import sys
+from typing import Optional
 
 # -----------------------------------------------------------
 # Configuração de Logging
@@ -38,7 +39,7 @@ logging.basicConfig(
 VALID_TYPES = {"vocation", "skills", "extra"}
 
 
-def parse_date_argument() -> str | None:
+def parse_date_argument() -> Optional[str]:
     """
     Lê o argumento opcional '--date' fornecido via CLI.
 
