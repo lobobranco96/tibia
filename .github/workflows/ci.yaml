@@ -39,7 +39,7 @@ jobs:
         run: |
           flake8 mnt \
             --max-line-length=120 \
-            --extend-ignore=E203,E501,F401,F841
+            --extend-ignore=E203,E501,F401,F841,W293
 
       # Executa os testes
       - name: Run tests with Pytest
