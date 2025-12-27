@@ -5,6 +5,6 @@ pyspark==3.5.3
 
 apache-airflow-providers-apache-spark
 apache-airflow-providers-amazon
-
+apache-airflow==3.0.6
 findspark
 python-dotenv
