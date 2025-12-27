@@ -92,7 +92,7 @@ class CSVLanding:
         logger.info(f"Arquivo salvo na Landing: s3a://{self.bucket}/{key}")
 
         return {
-          "bucket": self.bucket_name,
+          "bucket": self.bucket,
           "key": key,
           "rows": len(df),
           "columns": list(df.columns),

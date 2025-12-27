@@ -20,12 +20,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 2
 DEFAULT_RETRIES = 1
 DEFAULT_WAIT = 3
-MAX_PAGES = 20
+MAX_PAGES = 1
 
 
-# /////////////////
 # CLASSES AUXILIARES
-# /////////////////
 class BuscadorPagina:
     """
     Classe responsável por obter o HTML de uma página com controle de tentativas,
@@ -125,9 +123,7 @@ class HighScoreParser:
         logger.info(f"Extraídas {len(data)} linhas da tabela.")
         return pd.DataFrame(data, columns=columns)
 
-# /////////////////
 # CLASSE BASE ABSTRATA
-# /////////////////
 
 class BaseScraper(ABC):
     """
@@ -183,9 +179,7 @@ class BaseScraper(ABC):
         """
         pass
 
-# /////////////////
 # VOCATION SCRAPER
-# /////////////////
 
 class VocationScraper(BaseScraper):
     """
@@ -241,9 +235,7 @@ class VocationScraper(BaseScraper):
 
 
 
-# /////////////////
 # CATEGORY SCRAPER
-# /////////////////
 
 class CategoryScraper(BaseScraper):
     """

@@ -95,7 +95,7 @@ def extract_category(category: str) -> str:
         ]
 
         valid_skills = [
-            "axe", "sword", "club", "distance", "magic", "fist", "shielding"
+            "axe", "sword", "club", "distance", "magic_level", "fist", "shielding"
         ]
 
         category = category.lower().strip()
@@ -110,7 +110,7 @@ def extract_category(category: str) -> str:
                 f"Categoria inválida: {category}. "
                 "Use uma das seguintes opções:\n"
                 "Extras: achievements, fishing, loyalty, drome, boss, charm, goshnair\n"
-                "Skills: axe, sword, club, distance, magic, fist, shielding"
+                "Skills: axe, sword, club, distance, magic_level, fist, shielding"
             )
             return None
 
