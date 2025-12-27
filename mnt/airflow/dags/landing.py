@@ -15,7 +15,7 @@ default_args = {
     dag_id="landing_highscores_pipeline",
     description="Pipeline de extração de Pagina highscores do Tibia",
     default_args=default_args,
-    start_date=datetime(2025, 10, 15),
+    start_date=datetime(2025, 12, 27),
     catchup=False,
     tags=["tibia", "extract"]
 )
