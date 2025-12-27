@@ -1,8 +1,5 @@
-from datetime import datetime
-from uuid import uuid4 
 import logging
 import sys
-from pyspark.files import SparkFiles
 from pyspark.sql import functions as F
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -96,7 +93,6 @@ class Silver:
 
             # Leitura Bronze
             df_bronze_all = self.spark.read.table("nessie.bronze.vocation")
-    
             last_batch_id = (
                 df_bronze_all
                 .orderBy(F.col("ingestion_time").desc())
@@ -105,9 +101,8 @@ class Silver:
             )
 
             logging.info(f"Processando batch_id: {last_batch_id}")
-            
-            df_bronze = df_bronze_all.filter(F.col("batch_id") == last_batch_id)
 
+            df_bronze = df_bronze_all.filter(F.col("batch_id") == last_batch_id)
             if df_bronze.head(1) == []:
                 logging.warning("Nenhum dado encontrado na Bronze. Encerrando execução.")
                 return
@@ -135,7 +130,6 @@ class Silver:
 
             df_new.createOrReplaceTempView("vocation_updates")
             logging.info("View temporária `vocation_updates` criada com sucesso.")
-
             # MERGE INTO (SCD2)
             merge_query = """
             MERGE INTO nessie.silver.vocation t
@@ -159,7 +153,6 @@ class Silver:
                 s.ingestion_time, current_timestamp(), NULL, TRUE, s.hash_diff
             )
             """
-
             self.spark.sql(merge_query)
             logging.info("MERGE INTO finalizado com sucesso!")
 
@@ -227,7 +220,6 @@ class Silver:
 
             # Leitura Bronze
             df_bronze_all = self.spark.read.table("nessie.bronze.skills")
-
             last_batch_id = (
                 df_bronze_all
                 .orderBy(F.col("ingestion_time").desc())
@@ -236,9 +228,7 @@ class Silver:
             )
             
             logging.info(f"Processando batch_id: {last_batch_id}")
-            
             df_bronze = df_bronze_all.filter(F.col("batch_id") == last_batch_id)
-
             if df_bronze.head(1) == []:
                 logging.warning("Nenhum dado encontrado na Bronze. Encerrando execução.")
                 return
@@ -355,7 +345,6 @@ class Silver:
     
             # Leitura da Bronze
             df_bronze_all = self.spark.read.table("nessie.bronze.extra")
-    
             last_batch_id = (
                 df_bronze_all
                 .select("batch_id", "ingestion_time")
@@ -422,7 +411,6 @@ class Silver:
                   current_timestamp(), NULL, TRUE, source.hash_diff
                 )
             """
-    
             self.spark.sql(merge_query)
             logging.info("MERGE INTO Silver Extra finalizado com sucesso.")
     
