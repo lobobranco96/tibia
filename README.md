@@ -6,6 +6,19 @@ Este projeto tem como objetivo construir um Data Lakehouse completo, com orquest
 
 A pipeline foi projetada para coletar, transformar e disponibilizar dados de forma automatizada, garantindo escalabilidade, governança e reprodutibilidade em todas as etapas.
 
+## Motivação
+
+O Tibia possui rankings públicos que são atualizados constantemente, porém os dados não são disponibilizados de forma estruturada, histórica ou analítica.
+Isso dificulta análises como:
+
+- Evolução de jogadores ao longo do tempo
+- Comparação entre vocações e tipos de mundo
+- Análises históricas de ranking por skill ou categoria
+- Criação de dashboards personalizados e reutilizáveis
+
+Este projeto surge para resolver esse problema por meio de uma arquitetura de dados moderna, confiável e escalável, permitindo análises históricas e versionadas dos rankings do jogo.
+
+
 ## Objetivo
 
 Extrair dados de rankings de jogadores, skills e outras categorias do Tibia.
@@ -18,7 +31,7 @@ Estruturar por:
  - Salvar dados de forma estruturada na camada Bronze, permitindo transformações em Silver e Gold.
 
 
-## Arquitetura Geral
+## Fluxo
 
 A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gold), com integração entre componentes open source e compatíveis com S3.
 
@@ -65,20 +78,20 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
     +------------------------------------+
 ```
 
-## Stack Tecnológica
+## Arquitetura do projeto
 
 | Camada | Tecnologias | Descrição |
 |--------|--------------|------------|
 | **Coleta (Ingestão)** | **Python (Requests, BeautifulSoup)** | Automação e raspagem de dados web para coleta de informações brutas. |
 | **Armazenamento (Landing)** | **MinIO (S3-compatible)** | Data Lake para armazenamento dos dados brutos |
 | **Processamento (Bronze/Silver/Gold)** | **Apache Spark Cluster** | Processamento distribuído e transformação dos dados. |
-|  | **Apache Iceberg** | Formato de tabela transacional com versionamento, schema evolution e time travel. |
-|  | **Nessie Data Catalog** | Controle de versões e governança dos dados (Git para tabelas). |
+| **File Format** | **Apache Iceberg** | Formato de tabela transacional com versionamento, schema evolution e time travel. |
+|  **Catalogo de dados** | **Nessie Data Catalog** | Controle de versões e governança dos dados (Git para tabelas). |
 | **Orquestração** | **Apache Airflow** | Coordena o pipeline de ponta a ponta (scraping → transformação → carga → dashboards). |
 | **Consulta e Exploração** | **Dremio Query Engine** | SQL Engine para consultas sobre o Lakehouse (MinIO + Iceberg + Nessie). |
 | **Testes e Exploração Local** | **Jupyter Notebook** | Ambiente de experimentação e validação de transformações. |
-| **Visualização e Monitoramento** | **Streamlit** | Dashboards interativos e análises visuais. |
-|  | **Prometheus + Grafana** | Monitoramento e observabilidade de métricas (Spark, Airflow, containers, etc). |
+| **Visualização** | **Streamlit** | Dashboards interativos e análises visuais. |
+|  **Monitoramento** | **Prometheus + Grafana** | Monitoramento e observabilidade de métricas (Spark, Airflow, containers, etc). |
 
 ## Fluxo do Pipeline
 
