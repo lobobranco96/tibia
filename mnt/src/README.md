@@ -95,6 +95,9 @@ Funcionalidades principais:
 ## Camada Silver
 Local: `src/jobs/silver_job.py`
 
+A camada Silver é responsável por aplicar regras de negócio e versionamento histórico dos dados utilizando o padrão Slowly Changing Dimension Type 2 (SCD2), com Apache Iceberg e Nessie como catálogo e controle de versões.
+
+Os jobs são executados pelo Airflow via SparkSubmitOperator, de forma independente por domínio:
 Executado pelo Airflow via:
 ```bash
   spark-submit silver_job.py vocation
@@ -102,30 +105,69 @@ Executado pelo Airflow via:
   spark-submit silver_job.py extra
 ```
 
-A camada Silver aplica transformações avançadas e versionamento histórico dos dados (SCD Type 2), garantindo rastreabilidade completa.
+Cada execução processa apenas o último batch gerado na camada Bronze, garantindo consistência e isolamento entre cargas.
+
+### Funcionamento Geral da Silver
+Leitura incremental dos dados da camada Bronze via batch_id.
+Criação automática das tabelas Iceberg no namespace nessie.silver.
+Geração de colunas de controle temporal:
+  - start_date
+  - end_date
+  - is_current
+    
+Identificação de alterações por meio de hash_diff.
+Aplicação de MERGE INTO para:
+  - Encerrar versões antigas quando há mudanças.
+  - Inserir novas versões mantendo o histórico.
+  - Auditoria final com contagem total e registros atuais.
 
 #### Tabela: vocation
-  - Implementa Slowly Changing Dimension Type 2 (SCD2) via MERGE INTO.
-  - Mantém histórico completo de mudanças de nível, experiência, vocação e mundo.
-  - Novas colunas:
-      - start_date: início da validade do registro.
-      - end_date: fim da validade.
-      - is_current: flag indicando o registro ativo atual.
-  - Particionamento otimizado por:
-      - world
-      - days(start_date)
-      - bucket(8, name)
-  - Rastreabilidade total de evolução dos jogadores por vocação
+Implementa SCD Type 2 para evolução de jogadores por vocação.
+
+Versiona alterações em:
+  - vocation
+  - level
+  - experience
+  - world_type
+
+Apenas um registro por (name, world) permanece ativo (is_current = true).
+Particionamento otimizado para leitura e escrita:
+  - world
+  - days(start_date)
+  - bucket(8, name)
+    
+Permite análises temporais completas da progressão de nível e experiência.
 
 #### Tabela: skills
-  - Aplica a mesma abordagem SCD Type 2 da vocation, agora para habilidades individuais.
-  - Cada jogador possui histórico versionado por categoria de skill (ex: “Magic Level”, “Sword Fighting”).
-  - Controle de mudanças em skill_level, level, vocation e world.
-  - Estrutura idêntica à vocation:
-      - start_date
-      - end_date
-      - is_current
-  - Permite análises temporais da evolução da categoria skills ao longo do tempo.
+Aplica SCD Type 2 para habilidades individuais dos jogadores.
+
+Histórico versionado por:
+  - Jogador
+  - Mundo
+  - Categoria da skill (ex: sword, magic_level, shielding)
+    
+Controla mudanças em:
+  - skill_level
+  - level
+  - vocation
+    
+Mantém apenas um registro atual por (name, world, category).
+Estrutura de versionamento idêntica à tabela vocation.
+
+### Tabela: extra
+
+Responsável por dados complementares (achievements, drome score, fishing, etc).
+Chave de negócio:
+  - (name, world, category, title)
+
+Campos versionados:
+  - points
+  - level
+  - vocation
+
+Suporta títulos nulos com comparação segura (<=>).
+Preserva o arquivo de origem (source_file) para rastreabilidade.
+Ideal para domínios com schemas mais flexíveis.
 
 ---
 
