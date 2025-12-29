@@ -115,11 +115,31 @@ Exemplo de DataFrame final:
 
 
 ### 2. Camada Bronze:
-  - Criação das tabelas iceberg.
-  - Garantia de auditabilidade e histórico completo de dados.
+A camada Bronze é responsável por estruturar os dados brutos provenientes da camada Landing, garantindo padronização, versionamento e auditabilidade.
+ Nessa etapa:
+  - Os arquivos CSV são lidos do MinIO, particionados por data.
+  - As tabelas Iceberg são criadas automaticamente no catálogo Nessie.
+  - São validadas colunas obrigatórias e aplicadas normalizações leves (tipos, textos e nomes).
+  - Os dados recebem metadados de ingestão (batch_id, ingestion_time, ingestion_date).
+  - Registros duplicados são removidos.
+
+A escrita é realizada de forma incremental (append), preservando o histórico completo.
+Essa camada serve como base confiável e governada para as transformações nas camadas Silver e Gold.
 
 ### 3. Camada Silver:
-  - EM CONSTRUCAO
+A camada Silver é responsável por aplicar regras de negócio e versionar o histórico dos dados utilizando o padrão SCD Type 2.
+Nessa etapa:
+ - Os dados mais recentes da camada Bronze são lidos com base no último batch_id.
+ - São criadas tabelas Iceberg no catálogo Nessie, caso não existam.
+ - São geradas colunas de controle temporal (start_date, end_date, is_current).
+ - Alterações nos registros são identificadas por meio de hash_diff.
+
+É executado MERGE INTO para:
+ - Encerrar versões antigas quando há mudanças.
+ - Inserir novas versões mantendo o histórico.
+ - Apenas um registro por chave de negócio permanece como atual (is_current = true).
+
+A camada Silver garante rastreabilidade, histórico completo e consistência dos dados, servindo como base confiável para análises e agregações na camada Gold.
 
 ### 4. Camada Gold:
   - EM CONSTRUCAO
@@ -155,7 +175,7 @@ s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<nome>.csv
 ### 2 - DAG do Lakehouse (lakehouse_pipeline)
 
 Objetivo: Processar os dados da camada Bronze e gerar tabelas versionadas nas camadas Silver e Gold, utilizando Spark, Iceberg e Nessie.
-Dependência: É acionada automaticamente somente após a DAG de extração finalizar com sucesso. Isso é feito com o ExternalTaskSensor do Airflow.
+Dependência: É acionada automaticamente somente após a DAG de extração finalizar com sucesso. Isso é feito com o ExternalTaskSensor do Airflow. Com isso o SparkSubmitOperator envia um comando spark-submit para o cluster Spark, iniciando a execução de um job PySpark customizado, responsável por processar os dados a partir dos arquivos da camada Landing e executar as transformações das camadas Bronze e Silver.
 
 Detalhes de execução:
   - Cada categoria Bronze possui um job Spark independente:
@@ -267,5 +287,10 @@ Bronze -> Silver -> Gold (Iceberg + Nessie)
     └── visualization.yaml
 ```
 
-## EM CONSTRUÇÃO
+## Considerações Finais
+
+Este projeto demonstra a aplicação prática de uma arquitetura Lakehouse moderna,
+focada em dados versionados, governança, automação e consumo analítico,
+servindo como base para análises históricas e dashboards avançados do Tibia.
+
 
