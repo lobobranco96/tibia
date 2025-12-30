@@ -287,6 +287,65 @@ Bronze -> Silver -> Gold (Iceberg + Nessie)
     └── visualization.yaml
 ```
 
+## Como Executar
+Esta seção descreve como subir toda a infraestrutura do projeto localmente, inicializar os serviços e acessar cada componente do Lakehouse.
+
+### Pré-requisitos
+Antes de iniciar, é necessário ter instalado:
+ - Docker (>= 20.x)
+ - Make
+
+### Configuração de Variáveis de Ambiente
+As variáveis de ambiente utilizadas pelos serviços (Airflow, Spark, MinIO, Nessie, etc.) estão centralizadas no arquivo:
+```bash
+services/.credentials.env
+```
+Este arquivo contém, entre outras configurações:
+ - Credenciais de acesso ao MinIO (S3)
+ - Endpoint do Nessie Catalog
+ - Configurações do Spark
+
+### Inicialização do Ambiente ###
+O projeto utiliza um Makefile para simplificar a execução e garantir consistência no build e na subida dos containers.
+1. Build das imagens Docker:
+Para construir todas as imagens customizadas (Airflow, Spark, Notebook, Prometheus, etc.):
+```bash
+make build
+```
+ Esse comando:
+  - Builda todas as imagens definidas em docker/
+
+2. Subida dos Containers
+```bash
+make up
+```
+ou
+```bash
+docker compose -f services/lakehouse.yaml up -d
+docker compose -f services/orchestration.yaml up -d
+docker compose -f services/processing.yaml up -d
+docker compose -f services/observability.yaml up -d
+```
+Para iniciar todo o ambiente:
+ - Inicializa todos os containers definidos em services/*.yaml
+ - Sobe o cluster Spark
+ - Inicializa Airflow, MinIO, Nessie, Dremio, Prometheus e Grafana
+ - Cria a infraestrutura necessária para execução das DAGs e jobs Spark
+
+## Serviços Disponíveis
+
+Após a inicialização do ambiente, os seguintes serviços ficam acessíveis localmente:
+
+| Serviço | URL | Descrição |
+|-------|-----|-----------|
+| **Apache Airflow (Web UI)** | http://localhost:8080 | Orquestração e monitoramento das DAGs |
+| **MinIO (Console Web)** | http://localhost:9000 | Data Lake (Landing, Bronze, Silver, Gold) |
+| **Nessie Catalog** | http://localhost:19120 | Catálogo e versionamento de tabelas Iceberg |
+| **Apache Spark Cluster** | http://localhost:9090 | Monitoramento do cluster Spark |
+| **Prometheus** | http://localhost:9091 *(se configurado)* | Coleta de métricas |
+| **Grafana** | http://localhost:3000 *(se configurado)* | Dashboards de observabilidade |
+
+
 ## Considerações Finais
 
 Este projeto demonstra a aplicação prática de uma arquitetura Lakehouse moderna,
