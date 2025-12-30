@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from airflow.decorators import dag
-from datetime import timedelta
 from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.operators.bash import BashOperator
@@ -196,3 +195,4 @@ def lakehouse_pipeline():
 
 
 lakehouse = lakehouse_pipeline()
+
