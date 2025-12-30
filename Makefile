@@ -11,8 +11,11 @@ down:
 	docker compose -f services/orchestration.yaml down
 	docker compose -f services/processing.yaml down
 
-#build:
-#	docker compose -f services/orchestration.yaml build
-#	docker compose -f services/processing.yaml build
+build:
+	docker compose -f services/orchestration.yaml build	
+	docker compose -f services/processing.yaml build
+	docker compose -f services/lakehouse.yaml build
+
 # Reinicia o Airflow e os serviços de observabilidade
+
 restart: down up docker compose -f services/observability.yaml up -d 	docker compose -f services/observability.yaml down
