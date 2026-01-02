@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from airflow.decorators import dag
-from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.operators.bash import BashOperator
 from airflow.utils.task_group import TaskGroup
+from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
+
 
 """
 Pipeline Lakehouse – Tibia Highscores
@@ -109,37 +110,53 @@ def lakehouse_pipeline():
 
     # Espera a DAG de landing concluir
 
-    wait_vocation = ExternalTaskSensor(
+    wait_vocation = S3KeySensor(
         task_id="wait_for_vocation_landing",
-        external_dag_id="landing_highscores_pipeline",
-        external_task_id="extract_vocation.vocation_done",
-        mode="reschedule",
+        bucket_name="lakehouse",
+        bucket_key=(
+            "landing/"
+            "year={{ data_interval_start.strftime('%Y') }}/"
+            "month={{ data_interval_start.strftime('%m') }}/"
+            "day={{ data_interval_start.strftime('%d') }}/"
+            "vocation/_SUCCESS"
+        ),
+        aws_conn_id="minio_s3",
+        deferrable=True,
         poke_interval=60,
         timeout=60 * 60 * 3,
-        check_existence=True
     )
 
-    wait_skills = ExternalTaskSensor(
+    wait_skills = S3KeySensor(
         task_id="wait_for_skills_landing",
-        external_dag_id="landing_highscores_pipeline",
-        external_task_id="extract_skills.skills_done",
-        execution_delta=timedelta(minutes=0),
-        mode="reschedule",
+        bucket_name="lakehouse",
+        bucket_key=(
+            "landing/"
+            "year={{ data_interval_start.strftime('%Y') }}/"
+            "month={{ data_interval_start.strftime('%m') }}/"
+            "day={{ data_interval_start.strftime('%d') }}/"
+            "skills/_SUCCESS"
+        ),
+        aws_conn_id="minio_s3",
+        deferrable=True,
         poke_interval=60,
         timeout=60 * 60 * 3,
-        check_existence=True
     )
 
-    wait_extra = ExternalTaskSensor(
+    wait_extra = S3KeySensor(
         task_id="wait_for_extra_landing",
-        external_dag_id="landing_highscores_pipeline",
-        external_task_id="extract_extra.extra_done",
-        mode="reschedule",
+        bucket_name="lakehouse",
+        bucket_key=(
+            "landing/"
+            "year={{ data_interval_start.strftime('%Y') }}/"
+            "month={{ data_interval_start.strftime('%m') }}/"
+            "day={{ data_interval_start.strftime('%d') }}/"
+            "extra/_SUCCESS"
+        ),
+        aws_conn_id="minio_s3",
+        deferrable=True,
         poke_interval=60,
         timeout=60 * 60 * 3,
-        check_existence=True
     )
-
     with TaskGroup(group_id="vocation_lakehouse") as vocation_group:
 
         bronze_vocation = spark_task(
