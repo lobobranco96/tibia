@@ -155,6 +155,36 @@ A camada Silver garante rastreabilidade, histórico completo e consistência dos
 O projeto utiliza duas DAGs principais para gerenciar o fluxo completo de dados, garantindo que a extração e o processamento sejam organizados, escaláveis e rastreáveis.
 
 ### 1 - DAG de Extração e Ingestão (landing_highscores_pipeline)
+```text
+┌─────────────────────────────┐
+│   Extração / Scraping       │
+│ (Airflow - Landing DAG)     │
+└──────────────┬──────────────┘
+               │
+               v
+┌─────────────────────────────────────────────┐
+│               LANDING (MinIO)               │
+│                                             │
+│ landing/year=YYYY/month=MM/day=DD/          │
+│ ├── vocation/                               │
+│ │    ├── knight_*.csv                       │
+│ │    ├── druid_*.csv                        │
+│ │    └── _SUCCESS                           │
+│ │                                           │
+│ ├── skills/                                 │
+│ │    ├── axe_*.csv                          │
+│ │    ├── sword_*.csv                        │
+│ │    └── _SUCCESS                           │
+│ │                                           │
+│ └── extra/                                  │
+│      ├── achievements_*.csv                 │
+│      ├── boss_*.csv                         │
+│      └── _SUCCESS                           │
+└──────────────┬──────────────┬───────────────┘
+               │              │
+               │              │
+```
+
 Objetivo: Coletar dados brutos do Tibia, por vocação, skills e categorias extras, e salvar na camada Landing (MinIO/S3) como CSVs particionados por data.
 Detalhes de execução:
    - Cada vocação e categoria possui uma task independente, permitindo execução paralela.
@@ -174,6 +204,20 @@ s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<nome>.csv
 
 ### 2 - DAG do Lakehouse (lakehouse_pipeline)
 
+```txt
+        ┌───────────────────────────┐            ┌───────────────────────────┐        ┌───────────────────────────┐
+        │   S3KeySensor (vocation)  │            │   S3KeySensor (skills)    │        │   S3KeySensor (extra)     │
+        │ espera: vocation/_SUCCESS │            │ espera: skills/_SUCCESS   │        │ espera: extra/_SUCCESS    │
+        └──────────────┬────────────┘            └──────────────┬────────────┘        └──────────────┬────────────┘
+                       │                                        │                                    │
+                       v                                        v                                    v
+            ┌───────────────────────┐               ┌───────────────────────┐            ┌───────────────────────┐
+            │ Spark Bronze Vocation │               │ Spark Bronze Skills   │            │ Spark Bronze Extra    │
+            └───────────────────────┘               └───────────────────────┘            └───────────────────────┘
+
+
+
+```txt
 Objetivo: Processar os dados da camada Bronze e gerar tabelas versionadas nas camadas Silver e Gold, utilizando Spark, Iceberg e Nessie.
 Dependência: É acionada automaticamente somente após a DAG de extração finalizar com sucesso. Isso é feito com o ExternalTaskSensor do Airflow. Com isso o SparkSubmitOperator envia um comando spark-submit para o cluster Spark, iniciando a execução de um job PySpark customizado, responsável por processar os dados a partir dos arquivos da camada Landing e executar as transformações das camadas Bronze e Silver.
 
@@ -212,6 +256,7 @@ Bronze -> Silver -> Gold (Iceberg + Nessie)
 │   │   └── prometheus.yaml
 │   └── spark
 │       └── Dockerfile
+├── english_readme.md
 ├── Makefile
 ├── mnt
 │   ├── airflow
@@ -219,72 +264,50 @@ Bronze -> Silver -> Gold (Iceberg + Nessie)
 │   │       ├── lakehouse.py
 │   │       └── landing.py
 │   ├── minio
-│   │   ├── bronze
-│   │   └── landing
-│   │       └── year=2025
-│   │           └── month=10
-│   │               └── day=23
-│   │                   ├── experience
-│   │                   │   ├── druid.csv
-│   │                   │   ├── knight.csv
-│   │                   │   ├── monk.csv
-│   │                   │   ├── no_vocation.csv
-│   │                   │   ├── paladin.csv
-│   │                   │   └── sorcerer.csv
-│   │                   ├── extra
-│   │                   │   ├── achievements.csv
-│   │                   │   ├── boss.csv
-│   │                   │   ├── charm.csv
-│   │                   │   ├── drome.csv
-│   │                   │   ├── fishing.csv
-│   │                   │   ├── goshnair.csv
-│   │                   │   └── loyalty.csv
-│   │                   └── skills
-│   │                       ├── axe.csv
-│   │                       ├── club.csv
-│   │                       ├── distance.csv
-│   │                       ├── fist.csv
-│   │                       ├── magic_level.csv
-│   │                       ├── shielding.csv
-│   │                       └── sword.csv
+│   │   └── lakehouse
+│   │       ├── bronze
+│   │       ├── landing
+│   │       └── silver
 │   ├── notebooks
-│   ├── requirements.txt
-│   └── src
-│       ├── jobs
-│       │   ├── bronze
-│       │   │   ├── extra.py
-│       │   │   ├── skills.py
-│       │   │   └── vocation.py
-│       │   ├── gold
-│       │   │   └── gold_app.py
-│       │   ├── __init__.py
-│       │   ├── silver
-│       │   │   ├── extra.py
-│       │   │   ├── skills.py
-│       │   │   └── vocation.py
-│       │   └── utility.py
-│       ├── landing
-│       │   ├── extract.py
-│       │   ├── __init__.py
-│       │   ├── landing_app.py
-│       │   └── utility.py
-│       ├── patch.txt
-│       ├── README.md
-│       └── tests
-│           ├── html
-│           │   └── highscore_page.html
-│           ├── __init__.py
-│           ├── test_category.py
-│           ├── test_csvlanding.py
-│           ├── test_highscore.py
-│           └── test_vocation.py
+│   │   ├── iceberg_teste.ipynb
+│   │   └── scraping.ipynb
+│   ├── src
+│   │   ├── jobs
+│   │   │   ├── bronze_job.py
+│   │   │   ├── gold_job.py
+│   │   │   ├── silver_job.py
+│   │   │   └── utils
+│   │   ├── landing
+│   │   │   ├── __init__.py
+│   │   │   ├── landing_app.py
+│   │   │   ├── __pycache__
+│   │   │   ├── scraper.py
+│   │   │   └── utility.py
+│   │   ├── patch.txt
+│   │   ├── __pycache__
+│   │   │   ├── bronze_app.cpython-312.pyc
+│   │   │   ├── extract.cpython-312.pyc
+│   │   │   ├── __init__.cpython-312.pyc
+│   │   │   ├── teste.cpython-312.pyc
+│   │   │   └── utility.cpython-312.pyc
+│   │   ├── README.md
+│   │   └── tests
+│   │       ├── html
+│   │       ├── __init__.py
+│   │       ├── __pycache__
+│   │       ├── test_category.py
+│   │       ├── test_csvlanding.py
+│   │       ├── test_highscore.py
+│   │       └── test_vocation.py
+│   └── tests_requirements.txt
 ├── README.md
 ├── services
-    ├── lakehouse.yaml
-    ├── observability.yaml
-    ├── orchestration.yaml
-    ├── processing.yaml
-    └── visualization.yaml
+   ├── lakehouse.yaml
+   ├── observability.yaml
+   ├── orchestration.yaml
+   ├── processing.yaml
+   ├── teste.yaml
+   └── visualization.yaml
 ```
 
 ## Como Executar
