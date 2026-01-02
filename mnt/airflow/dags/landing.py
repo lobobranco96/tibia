@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import os
+import boto3
 from airflow.decorators import dag, task
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
@@ -11,15 +13,38 @@ default_args = {
     "retry_delay": timedelta(minutes=2),
 }
 
+
 @dag(
     dag_id="landing_highscores_pipeline",
     description="Pipeline de extração de Pagina highscores do Tibia",
     default_args=default_args,
-    start_date=datetime(2025, 12, 27),
+    start_date=datetime(2025, 10, 15),
     catchup=False,
     tags=["tibia", "extract"]
 )
 def landing_highscores_pipeline():
+
+    @task
+    def write_success_file(group_type):
+        s3 = boto3.client(
+            "s3",
+            endpoint_url=os.getenv("S3_ENDPOINT"),
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        )
+
+        today = datetime.today()
+        partition = f"year={today:%Y}/month={today:%m}/day={today:%d}"
+
+        key = f"landing/{partition}/{group_type}/_SUCCESS"
+
+        s3.put_object(
+            Bucket="lakehouse",
+            Key=key,
+            Body=""
+        )
+
+        return f"s3://lakehouse/{key}"
 
     # TaskGroup: EXTRAÇÃO DE VOCAÇÕES
     with TaskGroup(group_id="extract_vocation") as extract_vocation_group:
@@ -56,9 +81,8 @@ def landing_highscores_pipeline():
             extract_druid(),
             extract_monk(),
         ]
-        vocation_done = EmptyOperator(task_id="vocation_done")
-
-        extract_tasks >> vocation_done
+        success = write_success_file("vocation")
+        extract_tasks >> success
 
     # TaskGroup: EXTRAÇÃO DE SKILLS
     with TaskGroup(group_id="extract_skills") as extract_skills_group:
@@ -100,10 +124,9 @@ def landing_highscores_pipeline():
             extract_shielding(),
             extract_fist()
         ]
+        success = write_success_file("skills")
 
-        skills_done = EmptyOperator(task_id="skills_done")
-
-        extract_tasks >> skills_done
+        extract_tasks >> success
 
     # ============================================================
     # TaskGroup: EXTRAÇÃO DE EXTRA
@@ -148,10 +171,8 @@ def landing_highscores_pipeline():
             extract_goshnair(),
         ]
 
-        extra_done = EmptyOperator(task_id="extra_done")
-
-        extract_tasks >> extra_done
-
+        success = write_success_file("extra")
+        extract_tasks >> success
     # Dependências
 
     extract_vocation_group
