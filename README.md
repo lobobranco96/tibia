@@ -155,6 +155,7 @@ A camada Silver garante rastreabilidade, histórico completo e consistência dos
 O projeto utiliza duas DAGs principais para gerenciar o fluxo completo de dados, garantindo que a extração e o processamento sejam organizados, escaláveis e rastreáveis.
 
 ### 1 - DAG de Extração e Ingestão (landing_highscores_pipeline)
+
 ```text
 ┌─────────────────────────────┐
 │   Extração / Scraping       │
@@ -184,7 +185,6 @@ O projeto utiliza duas DAGs principais para gerenciar o fluxo completo de dados,
                │              │
                │              │
 ```
-
 Objetivo: Coletar dados brutos do Tibia, por vocação, skills e categorias extras, e salvar na camada Landing (MinIO/S3) como CSVs particionados por data.
 Detalhes de execução:
    - Cada vocação e categoria possui uma task independente, permitindo execução paralela.
@@ -204,7 +204,7 @@ s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<nome>.csv
 
 ### 2 - DAG do Lakehouse (lakehouse_pipeline)
 
-```txt
+```text
         ┌───────────────────────────┐            ┌───────────────────────────┐        ┌───────────────────────────┐
         │   S3KeySensor (vocation)  │            │   S3KeySensor (skills)    │        │   S3KeySensor (extra)     │
         │ espera: vocation/_SUCCESS │            │ espera: skills/_SUCCESS   │        │ espera: extra/_SUCCESS    │
@@ -217,7 +217,7 @@ s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<nome>.csv
 
 
 
-```txt
+```
 Objetivo: Processar os dados da camada Bronze e gerar tabelas versionadas nas camadas Silver e Gold, utilizando Spark, Iceberg e Nessie.
 Dependência: É acionada automaticamente somente após a DAG de extração finalizar com sucesso. Isso é feito com o ExternalTaskSensor do Airflow. Com isso o SparkSubmitOperator envia um comando spark-submit para o cluster Spark, iniciando a execução de um job PySpark customizado, responsável por processar os dados a partir dos arquivos da camada Landing e executar as transformações das camadas Bronze e Silver.
 
@@ -232,7 +232,7 @@ Camadas envolvidas: Bronze > Silver > Gold (transformações, limpeza, agregaç�
 
 Output: Tabelas Iceberg versionadas, auditáveis e prontas para consultas via Dremio ou dashboards.
 
-```txt
+```text
 landing_highscores_pipeline (DAG de extração)
         |
         v
