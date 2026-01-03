@@ -118,7 +118,7 @@ def lakehouse_pipeline():
             "year={{ data_interval_start.strftime('%Y') }}/"
             "month={{ data_interval_start.strftime('%m') }}/"
             "day={{ data_interval_start.strftime('%d') }}/"
-            "vocation/_SUCCESS"
+            "experience/_SUCCESS"
         ),
         aws_conn_id="minio_s3",
         deferrable=True,
@@ -162,7 +162,7 @@ def lakehouse_pipeline():
         bronze_vocation = spark_task(
             "bronze_vocation",
             BRONZE_SCRIPT,
-            args=["vocation", "--date", "2025-12-27"]
+            args=["vocation", "--date", "2026-01-02"]
         )
 
         silver_vocation = spark_task(
@@ -178,7 +178,7 @@ def lakehouse_pipeline():
         bronze_skills = spark_task(
             "bronze_skills",
             BRONZE_SCRIPT,
-            args=["skills", "--date", "2025-12-27"]
+            args=["skills", "--date", "2026-01-02"]
         )
 
         silver_skills = spark_task(
@@ -194,7 +194,7 @@ def lakehouse_pipeline():
         bronze_extra = spark_task(
             "bronze_extra",
             BRONZE_SCRIPT,
-            args=["extra", "--date", "2025-12-27"]
+            args=["extra", "--date", "2026-01-02"]
         )
 
         silver_extra = spark_task(
