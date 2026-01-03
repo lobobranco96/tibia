@@ -54,8 +54,4 @@ services:
 
 networks:
   lakehouse_network:
-    name: lakehouse_network
-
-networks:
-  lakehouse_network:
     driver: bridge
