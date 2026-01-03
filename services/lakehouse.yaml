@@ -27,6 +27,8 @@ services:
   minio-bucket:
     image: minio/mc:latest
     container_name: minio-bucket
+    volumes:
+      - ./readonly-lakehouse.json:/policies/readonly-lakehouse.json
     depends_on:
       minio:
         condition: service_healthy
@@ -39,11 +41,16 @@ services:
       done;
 
       echo 'MinIO está pronto. Iniciando configuração dos buckets.';
-      mc mb myminio/lakehouse;
-      echo 'Bucket criados com sucesso.';
+      mc mb --ignore-existing myminio/lakehouse;
+      echo 'Bucket criado com sucesso.';
 
       mc anonymous set public myminio/lakehouse;
       echo 'Políticas de acesso definidas para público.';
+
+      mc admin policy create myminio lakehouse-readonly /policies/readonly-lakehouse.json;
+      mc admin user add myminio airflow airflow123 || true
+      mc admin policy attach myminio lakehouse-readonly --user airflow
+
       "
     <<: *default_config
     
