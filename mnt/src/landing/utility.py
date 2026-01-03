@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import boto3
 import logging
+import json
 import pandas as pd
 
 #  CONFIG GLOBAL - Variáveis de ambiente e logger
@@ -11,6 +12,73 @@ logger = logging.getLogger(__name__)
 AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 S3_ENDPOINT = os.getenv("S3_ENDPOINT")
+
+class ExtractionMetadataWriter:
+    """
+    Responsável por registrar metadados de extração na camada metadata.
+    """
+
+    def __init__(self):
+        self.bucket = "lakehouse"
+        self.prefix = "metadata/extraction_logs"
+        self.today = datetime.today()
+
+        self.s3 = boto3.client(
+            "s3",
+            endpoint_url=S3_ENDPOINT,
+            aws_access_key_id=AWS_ACCESS_KEY,
+            aws_secret_access_key=AWS_SECRET_KEY
+        )
+
+    def write(
+        self,
+        metadata: dict,
+        pipeline: str,
+        entity: str,
+        subcategory: str,
+        status: str = "SUCCESS"
+    ):
+        if not metadata:
+            logger.warning("Metadata vazia — log não será gerado.")
+            return
+
+        partition = (
+            f"year={self.today:%Y}/"
+            f"month={self.today:%m}/"
+            f"day={self.today:%d}"
+        )
+
+        timestamp = datetime.now().strftime("%H%M%S")
+
+        key = (
+            f"{self.prefix}/"
+            f"{partition}/"
+            f"{entity}/"
+            f"{subcategory}_{timestamp}.json"
+        )
+
+        payload = {
+            "pipeline": pipeline,
+            "layer": "landing",
+            "entity": entity,
+            "subcategory": subcategory,
+            "status": status,
+            "bucket": metadata.get("bucket"),
+            "data_key": metadata.get("key"),
+            "rows": metadata.get("rows"),
+            "columns": metadata.get("columns"),
+            "extracted_at": metadata.get("timestamp"),
+            "logged_at": datetime.now().isoformat()
+        }
+
+        self.s3.put_object(
+            Bucket=self.bucket,
+            Key=key,
+            Body=json.dumps(payload, ensure_ascii=False, indent=2),
+            ContentType="application/json"
+        )
+
+        logger.info(f"Metadata registrada: s3://{self.bucket}/{key}")
 
 #  CLASSE: CSVLanding
 class CSVLanding:
@@ -43,8 +111,13 @@ class CSVLanding:
             aws_secret_access_key=AWS_SECRET_KEY
             )
             
+        self.metadata_writer = ExtractionMetadataWriter()
 
-    def write(self, df: pd.DataFrame, category_dir: str, dataset_name: str) -> dict:
+    def write(self, df: pd.DataFrame, 
+            category_dir: str, 
+            dataset_name: str, 
+            pipeline: str = "landing_highscores_pipeline") -> dict:
+            
         """
         Salva um DataFrame como CSV localmente na estrutura de partições por data.
 
@@ -92,7 +165,7 @@ class CSVLanding:
 
         logger.info(f"Arquivo salvo na Landing: s3a://{self.bucket}/{key}")
 
-        return {
+        metadata =  {
           "bucket": self.bucket,
           "key": key,
           "rows": len(df),
@@ -100,7 +173,16 @@ class CSVLanding:
             "timestamp": datetime.now().isoformat()
         }
 
+        # REGISTRO DE METADATA
+        self.metadata_writer.write(
+            metadata=metadata,
+            pipeline=pipeline,
+            entity=category_dir,
+            subcategory=dataset_name,
+            status="SUCCESS"
+        )
 
+        return metadata
 
 #  FUNÇÃO: validate_csv
 def validate_csv(df: pd.DataFrame, expected_columns=None, min_rows: int = 1) -> bool:
