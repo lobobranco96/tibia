@@ -78,12 +78,11 @@ def spark_task(task_id, app_path, args=None):
     return SparkSubmitOperator(
         task_id=task_id,
         application=app_path,
-        pool="spark_pool",
+       # pool="spark_pool",
         conn_id="spark_default",
         conf=conf,
         py_files="/opt/airflow/dags/src/jobs",
         verbose=True,
-        #application_args=[args] if args else None,
         application_args=args if args else None
     )
 
@@ -111,36 +110,36 @@ def lakehouse_pipeline():
     # Espera a DAG de landing concluir
 
     wait_vocation = S3KeySensor(
-        task_id="wait_for_vocation_landing",
-        bucket_name="lakehouse",
-        bucket_key=(
-            "landing/"
-            "year={{ data_interval_start.strftime('%Y') }}/"
-            "month={{ data_interval_start.strftime('%m') }}/"
-            "day={{ data_interval_start.strftime('%d') }}/"
-            "experience/_SUCCESS"
-        ),
-        aws_conn_id="minio_s3",
-        deferrable=True,
-        poke_interval=60,
-        timeout=60 * 60 * 3,
-    )
+         task_id="wait_for_vocation_landing",
+         bucket_name="lakehouse",
+         bucket_key=(
+             "landing/"
+             "year={{ data_interval_start.strftime('%Y') }}/"
+             "month={{ data_interval_start.strftime('%m') }}/"
+             "day={{ data_interval_start.strftime('%d') }}/"
+             "experience/_SUCCESS"
+         ),
+         aws_conn_id="minio_s3",
+         deferrable=True,
+         poke_interval=60,
+         timeout=60 * 60 * 3,
+     )
 
     wait_skills = S3KeySensor(
-        task_id="wait_for_skills_landing",
-        bucket_name="lakehouse",
-        bucket_key=(
-            "landing/"
-            "year={{ data_interval_start.strftime('%Y') }}/"
-            "month={{ data_interval_start.strftime('%m') }}/"
-            "day={{ data_interval_start.strftime('%d') }}/"
-            "skills/_SUCCESS"
-        ),
-        aws_conn_id="minio_s3",
-        deferrable=True,
-        poke_interval=60,
-        timeout=60 * 60 * 3,
-    )
+         task_id="wait_for_skills_landing",
+         bucket_name="lakehouse",
+         bucket_key=(
+             "landing/"
+             "year={{ data_interval_start.strftime('%Y') }}/"
+             "month={{ data_interval_start.strftime('%m') }}/"
+             "day={{ data_interval_start.strftime('%d') }}/"
+             "skills/_SUCCESS"
+         ),
+         aws_conn_id="minio_s3",
+         deferrable=True,
+         poke_interval=60,
+         timeout=60 * 60 * 3,
+     )
 
     wait_extra = S3KeySensor(
         task_id="wait_for_extra_landing",
@@ -153,39 +152,39 @@ def lakehouse_pipeline():
             "extra/_SUCCESS"
         ),
         aws_conn_id="minio_s3",
-        deferrable=True,
+        deferrable=False,
         poke_interval=60,
         timeout=60 * 60 * 3,
     )
     with TaskGroup(group_id="vocation_lakehouse") as vocation_group:
 
         bronze_vocation = spark_task(
-            "bronze_vocation",
-            BRONZE_SCRIPT,
-            args=["vocation", "--date", "2026-01-02"]
-        )
+             "bronze_vocation",
+             BRONZE_SCRIPT,
+             args=["vocation"]#, "--date", "2026-01-03"]
+         )
 
         silver_vocation = spark_task(
-            "silver_vocation",
-            SILVER_SCRIPT,
-            args=["vocation"]
-        )
+             "silver_vocation",
+             SILVER_SCRIPT,
+             args=["vocation"]
+         )
 
         bronze_vocation >> silver_vocation
 
     with TaskGroup(group_id="skills_lakehouse") as skills_group:
 
         bronze_skills = spark_task(
-            "bronze_skills",
-            BRONZE_SCRIPT,
-            args=["skills", "--date", "2026-01-02"]
-        )
+             "bronze_skills",
+             BRONZE_SCRIPT,
+             args=["skills"]#,~ "--date", "2026-01-03"]
+         )
 
         silver_skills = spark_task(
-            "silver_skills",
-            SILVER_SCRIPT,
-            args=["skills"]
-        )
+             "silver_skills",
+             SILVER_SCRIPT,
+             args=["skills"]
+         )
 
         bronze_skills >> silver_skills
 
@@ -194,7 +193,7 @@ def lakehouse_pipeline():
         bronze_extra = spark_task(
             "bronze_extra",
             BRONZE_SCRIPT,
-            args=["extra", "--date", "2026-01-02"]
+            args=["extra"]#, "--date", "2026-01-03"]
         )
 
         silver_extra = spark_task(
