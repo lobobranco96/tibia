@@ -52,7 +52,7 @@ class Bronze:
         Caso None, utiliza a data atual para construir o path da camada Landing.
     """
 
-    def __init__(self, spark, date_str):
+    def __init__(self, spark, date_str=None):
         self.spark = spark
         self.date_str = date_str
 
@@ -102,7 +102,12 @@ class Bronze:
 
         # Define path da landing com base na data
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
-        partition = f"year={today_date.year}/month={today_date.month}/day={today_date.day}"
+        partition = (
+                    f"year={today_date.year}/"
+                    f"month={today_date.strftime('%m')}/"
+                    f"day={today_date.strftime('%d')}"
+                    )
+        
 
         path = f"s3a://lakehouse/landing/{partition}/experience/"
         logging.info(f"Lendo dados de: {path}")
@@ -173,7 +178,6 @@ class Bronze:
             name STRING,
             vocation STRING,
             world STRING,
-            level INT,
             skill_level INT,
             category STRING,
             ingestion_time TIMESTAMP,
@@ -192,14 +196,20 @@ class Bronze:
         """)
 
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
-        partition = f"year={today_date.year}/month={today_date.month}/day={today_date.day}"
+        partition = (
+                    f"year={today_date.year}/"
+                    f"month={today_date.strftime('%m')}/"
+                    f"day={today_date.strftime('%d')}"
+                    )
+        
+        
 
         path = f"s3a://lakehouse/landing/{partition}/skills/"
         logging.info(f"Lendo dados de: {path}")
 
         df_raw = self.spark.read.csv(path, header=True)
 
-        colunas_esperadas = {'Rank', 'Name', 'Vocation', 'World', 'Level', 'Skill Level', 'Category'}
+        colunas_esperadas = {'Rank', 'Name', 'Vocation', 'World', 'Skill Level', 'Category'}
         colunas_faltando = colunas_esperadas - set(df_raw.columns)
 
         if colunas_faltando:
@@ -209,19 +219,19 @@ class Bronze:
         batch_id = str(uuid4())
         logging.info(f"Gerando batch_id: {batch_id}")
 
+        df_raw.printSchema()
+
         df_bronze = (
-            df_raw.drop("Rank")
+            df_raw.drop("Rank", "Level")
             .withColumnRenamed("Name", "name")
             .withColumnRenamed("Vocation", "vocation")
             .withColumnRenamed("World", "world")
-            .withColumnRenamed("Level", "level")
             .withColumnRenamed("Skill Level", "skill_level")
             .withColumnRenamed("Category", "category")
             .withColumn("ingestion_time", F.current_timestamp())
             .withColumn("ingestion_date", F.current_date())
             .withColumn("source_system", F.lit("highscore_tibia_page"))
             .withColumn("batch_id", F.lit(batch_id))
-            .withColumn("level", F.col("level").cast("int"))
             .withColumn("skill_level", F.col("skill_level").cast("int"))
             .withColumn("vocation", F.trim(F.lower("vocation")))
             .withColumn("world", F.trim(F.lower("world")))
@@ -255,7 +265,6 @@ class Bronze:
         CREATE TABLE IF NOT EXISTS nessie.bronze.extra (
             name STRING,
             vocation STRING,
-            level INT,
             world STRING,
             category STRING,
             title STRING,
@@ -277,7 +286,11 @@ class Bronze:
         """)
 
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
-        partition = f"year={today_date.year}/month={today_date.month}/day={today_date.day}"
+        partition = (
+                    f"year={today_date.year}/"
+                    f"month={today_date.strftime('%m')}/"
+                    f"day={today_date.strftime('%d')}"
+                    )
         
         path = f"s3a://lakehouse/landing/{partition}/extra/"
         logging.info(f"Lendo dados de: {path}")
@@ -288,6 +301,8 @@ class Bronze:
             logging.warning("Nenhum arquivo encontrado em extra/. Encerrando Bronze Extra.")
             return
 
+        df_raw.printSchema()
+        
         # Normaliza nomes (lowercase + underscore)
         df_raw = df_raw.toDF(*[c.lower().replace(" ", "_") for c in df_raw.columns])
 
@@ -298,7 +313,7 @@ class Bronze:
                 df_raw = df_raw.withColumnRenamed(old, new)
 
         # Colunas finais esperadas
-        final_columns = ["name", "vocation", "level", "world", "category", "title", "points"]
+        final_columns = ["name", "vocation", "world", "category", "title", "points"]
 
         # Cria colunas faltantes
         for col in final_columns:
@@ -315,7 +330,6 @@ class Bronze:
             .withColumn("source_system", F.lit("highscore_tibia_page"))
             .withColumn("batch_id", F.lit(batch_id))
             .withColumn("source_file", F.input_file_name())
-            .withColumn("level", F.col("level").cast("int"))
             .withColumn("points", F.col("points").cast("int"))
             .withColumn("vocation", F.trim(F.lower("vocation")))
             .withColumn("world", F.trim(F.lower("world")))
