@@ -31,6 +31,7 @@ def create_spark_session(appname):
         .set("spark.sql.catalog.nessie.authentication.type", "NONE")
         .set("spark.sql.catalog.nessie.cache-enabled", "false")
         .set("spark.sql.catalog.nessie.warehouse", "s3a://lakehouse/")
+        .set("spark.sql.catalog.nessie.client-api-version", "2")
 
         # CONFIG S3 -> ICEBERG
         .set("spark.sql.catalog.nessie.s3.path-style-access", "true")
@@ -49,10 +50,12 @@ def create_spark_session(appname):
         .set("spark.hadoop.fs.defaultFS", "s3a://lakehouse")
 
         # RECURSOS
-        .set("spark.executor.memory", "1g")
+        .set("spark.executor.memory", "2g")
+        .set("spark.executor.memoryOverhead", "512m")
         .set("spark.executor.cores", "1")
-        .set("spark.driver.memory", "1g")
+        .set("spark.driver.memory", "1g")   
         .set("spark.executor.instances", "1")
+
     )
 
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
