@@ -28,7 +28,7 @@ services:
     image: minio/mc:latest
     container_name: minio-bucket
     volumes:
-      - ./readonly-lakehouse.json:/policies/readonly-lakehouse.json
+      - .lakehouse-readwrite.json:/policies/lakehouse-readwrite.json
     depends_on:
       minio:
         condition: service_healthy
@@ -47,9 +47,10 @@ services:
       mc anonymous set public myminio/lakehouse;
       echo 'Políticas de acesso definidas para público.';
 
-      mc admin policy create myminio lakehouse-readonly /policies/readonly-lakehouse.json;
       mc admin user add myminio airflow airflow123 || true
-      mc admin policy attach myminio lakehouse-readonly --user airflow
+      mc admin policy remove myminio lakehouse-readwrite || true
+      mc admin policy create myminio lakehouse-readwrite /policies/lakehouse-readwrite.json
+      mc admin policy attach myminio lakehouse-readwrite --user airflow;
 
       "
     <<: *default_config
@@ -104,7 +105,7 @@ services:
       - ../mnt/notebooks:/app
       - ../mnt/src:/app/src/
     environment:
-      - NESSIE_URI=http://nessie:19120/api/v1
+      - NESSIE_URI=http://nessie:19120/api/v2
       - PYTHONPATH=/app/src
       - SPARK_SUBMIT_OPTIONS=--conf spark.hadoop.fs.s3a.endpoint=http://minio:9000 --conf spark.hadoop.fs.s3a.path.style.access=true --conf spark.hadoop.fs.s3a.access.key=admin --conf spark.hadoop.fs.s3a.secret.key=password
 
