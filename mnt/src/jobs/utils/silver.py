@@ -82,13 +82,19 @@ class Silver:
                 hash_diff STRING
             )
             USING iceberg
-            PARTITIONED BY (world, days(start_date), bucket(8, name))
+            PARTITIONED BY (world)
             TBLPROPERTIES (
-                'format-version' = '2',
-                'write.delete.mode' = 'merge-on-read'
+                'format-version' = '2', 
+                'write.update.mode' = 'copy-on-write',
+                'write.delete.mode' = 'copy-on-write'
             )
             """)
-
+            self.spark.conf.set(
+                "spark.sql.iceberg.write.distribution-mode",
+                "none"
+            )
+            self.spark.conf.set("spark.sql.files.maxRecordsPerFile", 500000)
+            self.spark.conf.set("spark.sql.iceberg.write.target-file-size-bytes", 134217728)  # 128MB
             logging.info("Tabela Silver inicializada com sucesso.")
 
             # Leitura Bronze
@@ -128,31 +134,50 @@ class Silver:
                 .withColumn("is_current", F.lit(True))
             )
 
+            df_new = df_new.repartition(4, "world") 
             df_new.createOrReplaceTempView("vocation_updates")
             logging.info("View temporária `vocation_updates` criada com sucesso.")
+
             # MERGE INTO (SCD2)
-            merge_query = """
+            merge_update_query = """
             MERGE INTO nessie.silver.vocation t
             USING vocation_updates s
             ON  t.name = s.name
             AND t.world = s.world
             AND t.is_current = TRUE
-    
-            WHEN MATCHED AND t.hash_diff <> s.hash_diff
+
+            WHEN MATCHED
+            AND t.hash_diff <> s.hash_diff
             THEN UPDATE SET
                 t.end_date = current_timestamp(),
                 t.is_current = FALSE
-            WHEN NOT MATCHED
-            THEN INSERT (
-                name, world, vocation, level, experience, world_type,
-                ingestion_time, start_date, end_date, is_current, hash_diff )
-            VALUES (
-                s.name, s.world, s.vocation, s.level, s.experience, s.world_type,
-                s.ingestion_time, current_timestamp(), NULL, TRUE, s.hash_diff
-            )
             """
-            self.spark.sql(merge_query)
+            self.spark.sql(merge_update_query)
             logging.info("MERGE INTO finalizado com sucesso!")
+
+            insert_query = """
+            INSERT INTO nessie.silver.vocation
+            SELECT
+                s.name,
+                s.world,
+                s.vocation,
+                s.level,
+                s.experience,
+                s.world_type,
+                s.ingestion_time,
+                current_timestamp() AS start_date,
+                NULL AS end_date,
+                TRUE AS is_current,
+                s.hash_diff
+            FROM vocation_updates s
+            LEFT ANTI JOIN nessie.silver.vocation t
+            ON t.name = s.name
+            AND t.world = s.world
+            AND t.is_current = TRUE
+            """
+            self.spark.sql(insert_query)
+
+
 
             # Auditoria
             df_check = self.spark.read.table("nessie.silver.vocation")
@@ -196,7 +221,6 @@ class Silver:
                 world STRING,
                 category STRING,
                 vocation STRING,
-                level INT,
                 skill_level INT,
                 ingestion_time TIMESTAMP,
                 start_date TIMESTAMP,
@@ -205,12 +229,20 @@ class Silver:
                 hash_diff STRING
             )
             USING iceberg
-            PARTITIONED BY (world, days(start_date), bucket(8, name))
+            PARTITIONED BY (world)
             TBLPROPERTIES (
-                'format-version' = '2',
-                'write.delete.mode' = 'merge-on-read'
+                'format-version' = '2', 
+                'write.update.mode' = 'copy-on-write',
+                'write.delete.mode' = 'copy-on-write'
             )
             """)
+
+            self.spark.conf.set(
+                "spark.sql.iceberg.write.distribution-mode",
+                "none"
+            )
+            self.spark.conf.set("spark.sql.files.maxRecordsPerFile", 500000)
+            self.spark.conf.set("spark.sql.iceberg.write.target-file-size-bytes", 134217728)  # 128MB
 
             logging.info("Tabela Silver 'skills' inicializada com sucesso.")
 
@@ -238,7 +270,6 @@ class Silver:
                         F.concat_ws(
                             "||",
                             F.col("vocation"),
-                            F.col("level").cast("string"),
                             F.col("skill_level").cast("string")
                         ),
                         256
@@ -252,33 +283,47 @@ class Silver:
             df_new.createOrReplaceTempView("skills_updates")
             logging.info("View temporária 'skills_updates' criada com sucesso.")
 
-            # MERGE (SCD2)
-            merge_query = """
+            merge_update_query = """
             MERGE INTO nessie.silver.skills t
             USING skills_updates s
             ON  t.name = s.name
             AND t.world = s.world
             AND t.category = s.category
             AND t.is_current = TRUE
-    
-            WHEN MATCHED AND t.hash_diff <> s.hash_diff
+
+            WHEN MATCHED
+            AND t.hash_diff <> s.hash_diff
             THEN UPDATE SET
                 t.end_date = current_timestamp(),
                 t.is_current = FALSE
-    
-            WHEN NOT MATCHED
-            THEN INSERT (
-                name, world, category, vocation, level, skill_level,
-                ingestion_time, start_date, end_date, is_current, hash_diff
-            )
-            VALUES (
-                s.name, s.world, s.category, s.vocation, s.level, s.skill_level,
-                s.ingestion_time, current_timestamp(), NULL, TRUE, s.hash_diff
-            )
             """
+            self.spark.sql(merge_update_query)
+            logging.info("UPDATE finalizado com sucesso!")
 
-            self.spark.sql(merge_query)
-            logging.info("MERGE INTO concluído com sucesso!")
+            insert_query = """
+            INSERT INTO nessie.silver.skills
+            SELECT
+                s.name,
+                s.world,
+                s.category,
+                s.vocation,
+                s.level,
+                s.skill_level,
+                s.ingestion_time,
+                current_timestamp() AS start_date,
+                NULL AS end_date,
+                TRUE AS is_current,
+                s.hash_diff
+            FROM skills_updates s
+            LEFT ANTI JOIN nessie.silver.skills t
+            ON  t.name = s.name
+            AND t.world = s.world
+            AND t.category = s.category
+            AND t.is_current = TRUE
+            """
+            self.spark.sql(insert_query)
+            logging.info("INSERT finalizado com sucesso!")
+
 
             # Auditoria
             df_check = self.spark.read.table("nessie.silver.skills")
@@ -318,7 +363,6 @@ class Silver:
                 category STRING,
                 title STRING,
                 vocation STRING,
-                level INT,
                 points INT,
                 source_file STRING,
                 ingestion_time TIMESTAMP,
@@ -328,14 +372,19 @@ class Silver:
                 hash_diff STRING
             )
             USING iceberg
-            PARTITIONED BY (world, days(start_date), bucket(8, name))
+            PARTITIONED BY (world)
             TBLPROPERTIES (
-                'format-version' = '2',
-                'write.format.default' = 'parquet',
-                'write.metadata.compression' = 'gzip',
-                'write.delete.mode' = 'merge-on-read'
+                'format-version' = '2', 
+                'write.update.mode' = 'copy-on-write',
+                'write.delete.mode' = 'copy-on-write'
             )
             """)
+            self.spark.conf.set(
+                "spark.sql.iceberg.write.distribution-mode",
+                "none"
+            )
+            self.spark.conf.set("spark.sql.files.maxRecordsPerFile", 500000)
+            self.spark.conf.set("spark.sql.iceberg.write.target-file-size-bytes", 134217728)  # 128MB
     
             logging.info("Tabela Silver 'extra' inicializada com sucesso.")
     
@@ -376,37 +425,51 @@ class Silver:
     
             df_updates.createOrReplaceTempView("extra_updates")
             logging.info("View temporária 'extra_updates' criada com sucesso.")
-    
-            # MERGE SCD Type 2 (CORRETO)
-            merge_query = """
-                MERGE INTO nessie.silver.extra AS target
-                USING extra_updates AS source
-                ON target.name = source.name
-                 AND target.world = source.world
-                 AND target.category = source.category
-                 AND target.title <=> source.title
-                 AND target.is_current = TRUE
-                WHEN MATCHED
-                 AND target.hash_diff <> source.hash_diff
-                THEN UPDATE SET
-                  target.end_date = current_timestamp(),
-                  target.is_current = FALSE
-                WHEN NOT MATCHED
-                THEN INSERT (
-                  name, world, category, title,
-                  vocation, level, points,
-                  source_file, ingestion_time,
-                  start_date, end_date, is_current, hash_diff
-                )
-                VALUES (
-                  source.name, source.world, source.category, source.title,
-                  source.vocation, source.level, source.points,
-                  source.source_file, source.ingestion_time,
-                  current_timestamp(), NULL, TRUE, source.hash_diff
-                )
+
+            merge_update_query = """
+            MERGE INTO nessie.silver.extra t
+            USING extra_updates s
+            ON  t.name = s.name
+            AND t.world = s.world
+            AND t.category = s.category
+            AND t.title <=> s.title
+            AND t.is_current = TRUE
+
+            WHEN MATCHED
+            AND t.hash_diff <> s.hash_diff
+            THEN UPDATE SET
+                t.end_date = current_timestamp(),
+                t.is_current = FALSE
             """
-            self.spark.sql(merge_query)
-            logging.info("MERGE INTO Silver Extra finalizado com sucesso.")
+            self.spark.sql(merge_update_query)
+            logging.info("UPDATE finalizado com sucesso!")
+
+            insert_query = """
+            INSERT INTO nessie.silver.extra
+            SELECT
+                s.name,
+                s.world,
+                s.category,
+                s.title,
+                s.vocation,
+                s.level,
+                s.points,
+                s.source_file,
+                s.ingestion_time,
+                current_timestamp() AS start_date,
+                NULL AS end_date,
+                TRUE AS is_current,
+                s.hash_diff
+            FROM extra_updates s
+            LEFT ANTI JOIN nessie.silver.extra t
+            ON  t.name = s.name
+            AND t.world = s.world
+            AND t.category = s.category
+            AND t.title <=> s.title
+            AND t.is_current = TRUE
+            """ 
+            self.spark.sql(insert_query)
+            logging.info("INSERT finalizado com sucesso!")
     
             # Auditoria
             df_check = self.spark.read.table("nessie.silver.extra")
