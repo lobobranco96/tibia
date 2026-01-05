@@ -8,8 +8,9 @@ def test_write_creates_object_in_s3():
 
     landing = CSVLanding()
     landing.s3 = MagicMock()
-    landing.bucket_name = "test-bucket"
+    landing.metadata_writer.s3 = MagicMock()
 
+    landing.bucket_name = "test-bucket"
     result = landing.write(df, "teste", "arquivo")
 
     landing.s3.put_object.assert_called_once()
@@ -21,8 +22,9 @@ def test_write_sends_correct_csv_content():
 
     landing = CSVLanding()
     landing.s3 = MagicMock()
-    landing.bucket_name = "test-bucket"
+    landing.metadata_writer.s3 = MagicMock()
 
+    landing.bucket_name = "test-bucket"
     landing.write(df, "pessoas", "dados")
 
     # Captura o CSV enviado ao S3
@@ -38,6 +40,8 @@ def test_write_metadata():
 
     landing = CSVLanding()
     landing.s3 = MagicMock()
+    landing.metadata_writer.s3 = MagicMock()
+    
     landing.bucket_name = "test-bucket"
 
     result = landing.write(df, "teste", "dados")
