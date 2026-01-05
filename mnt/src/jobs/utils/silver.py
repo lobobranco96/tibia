@@ -86,8 +86,7 @@ class Silver:
             TBLPROPERTIES (
                 'format-version' = '2', 
                 'write.update.mode' = 'copy-on-write',
-                'write.delete.mode' = 'copy-on-write'
-            )
+                'write.delete.mode' = 'copy-on-write')
             """)
             self.spark.conf.set(
                 "spark.sql.iceberg.write.distribution-mode",
@@ -234,7 +233,7 @@ class Silver:
                 'format-version' = '2', 
                 'write.update.mode' = 'copy-on-write',
                 'write.delete.mode' = 'copy-on-write'
-            )
+                )
             """)
 
             self.spark.conf.set(
@@ -336,7 +335,7 @@ class Silver:
         except Exception as e:
             logging.exception(f"Falha no job Silver (skills): {str(e)}")
             sys.exit(1)
-
+            
     # =======================================================================
     # EXTRA
     # =======================================================================
@@ -374,7 +373,7 @@ class Silver:
             USING iceberg
             PARTITIONED BY (world)
             TBLPROPERTIES (
-                'format-version' = '2', 
+                'format-version' = '2',
                 'write.update.mode' = 'copy-on-write',
                 'write.delete.mode' = 'copy-on-write'
             )
@@ -483,4 +482,3 @@ class Silver:
         except Exception as e:
             logging.exception(f"Falha no job Silver Extra: {str(e)}")
             sys.exit(1)
-
