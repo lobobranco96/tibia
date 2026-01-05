@@ -219,7 +219,7 @@ s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<nome>.csv
 
 ```
 Objetivo: Processar os dados da camada Bronze e gerar tabelas versionadas nas camadas Silver e Gold, utilizando Spark, Iceberg e Nessie.
-Dependência: É acionada automaticamente somente após a DAG de extração finalizar com sucesso. Isso é feito com o ExternalTaskSensor do Airflow. Com isso o SparkSubmitOperator envia um comando spark-submit para o cluster Spark, iniciando a execução de um job PySpark customizado, responsável por processar os dados a partir dos arquivos da camada Landing e executar as transformações das camadas Bronze e Silver.
+Dependência: É acionada automaticamente somente após os dados chegarem na Landing. Com isso o SparkSubmitOperator envia um comando spark-submit para o cluster Spark, iniciando a execução de um job PySpark customizado, responsável por processar os dados a partir dos arquivos da camada Landing e executar as transformações das camadas Bronze e Silver.
 
 Detalhes de execução:
   - Cada categoria Bronze possui um job Spark independente:
