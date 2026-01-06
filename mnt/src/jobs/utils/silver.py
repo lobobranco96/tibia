@@ -63,31 +63,6 @@ class Silver:
         Levanta exceção e encerra com código 1 em caso de erro.
         """
         try:
-            # Configuração e criação de namespace
-            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver")
-
-            # Criação da tabela
-            self.spark.sql("""
-            CREATE TABLE IF NOT EXISTS nessie.silver.vocation (
-                name STRING,
-                world STRING,
-                vocation STRING,
-                level INT,
-                experience LONG,
-                world_type STRING,
-                ingestion_time TIMESTAMP,
-                start_date TIMESTAMP,
-                end_date TIMESTAMP,
-                is_current BOOLEAN,
-                hash_diff STRING
-            )
-            USING iceberg
-            PARTITIONED BY (world)
-            TBLPROPERTIES (
-                'format-version' = '2',
-                'write.update.mode' = 'copy-on-write',
-                'write.delete.mode' = 'copy-on-write')
-            """)
             self.spark.conf.set(
                 "spark.sql.iceberg.write.distribution-mode",
                 "none"
@@ -211,30 +186,6 @@ class Silver:
         Em caso de falha, loga a exceção e encerra o processo.
         """
         try:
-            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver")
-
-            # Criar tabela Silver
-            self.spark.sql("""
-            CREATE TABLE IF NOT EXISTS nessie.silver.skills (
-                name STRING,
-                world STRING,
-                category STRING,
-                vocation STRING,
-                skill_level INT,
-                ingestion_time TIMESTAMP,
-                start_date TIMESTAMP,
-                end_date TIMESTAMP,
-                is_current BOOLEAN,
-                hash_diff STRING
-            )
-            USING iceberg
-            PARTITIONED BY (world)
-            TBLPROPERTIES (
-                'format-version' = '2',
-                'write.update.mode' = 'copy-on-write',
-                'write.delete.mode' = 'copy-on-write'
-                )
-            """)
 
             self.spark.conf.set(
                 "spark.sql.iceberg.write.distribution-mode",
@@ -352,32 +303,6 @@ class Silver:
             - vocation
         """
         try:
-            self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.silver")
-    
-            # Criação da tabela Silver Extra
-            self.spark.sql("""
-            CREATE TABLE IF NOT EXISTS nessie.silver.extra (
-                name STRING,
-                world STRING,
-                category STRING,
-                title STRING,
-                vocation STRING,
-                points INT,
-                source_file STRING,
-                ingestion_time TIMESTAMP,
-                start_date TIMESTAMP,
-                end_date TIMESTAMP,
-                is_current BOOLEAN,
-                hash_diff STRING
-            )
-            USING iceberg
-            PARTITIONED BY (world)
-            TBLPROPERTIES (
-                'format-version' = '2',
-                'write.update.mode' = 'copy-on-write',
-                'write.delete.mode' = 'copy-on-write'
-            )
-            """)
             self.spark.conf.set(
                 "spark.sql.iceberg.write.distribution-mode",
                 "none"

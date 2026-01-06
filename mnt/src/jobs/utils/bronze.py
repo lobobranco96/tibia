@@ -62,7 +62,6 @@ class Bronze:
         Executa o job Bronze para dados de vocação (vocation).
 
         1. Configura catálogo Iceberg + warehouse.
-        2. Cria namespace + tabela caso não existam.
         3. Lê arquivos CSV da camada landing.
         4. Valida colunas obrigatórias.
         5. Normaliza nomes e tipos de colunas.
@@ -72,33 +71,6 @@ class Bronze:
 
         Tabela criada: nessie.bronze.vocation
         """
-
-        # Namespace
-        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze")
-
-        # Criação da tabela Iceberg
-        self.spark.sql("""
-        CREATE TABLE IF NOT EXISTS nessie.bronze.vocation (
-            name STRING,
-            vocation STRING,
-            level INT,
-            world STRING,
-            experience LONG,
-            world_type STRING,
-            ingestion_time TIMESTAMP,
-            ingestion_date DATE,
-            source_system STRING,
-            batch_id STRING
-        )
-        USING iceberg
-        PARTITIONED BY (world, ingestion_date)
-        TBLPROPERTIES (
-            'format-version' = '2',
-            'write.format.default' = 'parquet',
-            'write.metadata.compression' = 'gzip',
-            'write.delete.mode' = 'merge-on-read'
-        )
-        """)
 
         # Define path da landing com base na data
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
@@ -171,30 +143,6 @@ class Bronze:
         Tabela criada: nessie.bronze.skills
         """
 
-        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze")
-
-        self.spark.sql("""
-        CREATE TABLE IF NOT EXISTS nessie.bronze.skills (
-            name STRING,
-            vocation STRING,
-            world STRING,
-            skill_level INT,
-            category STRING,
-            ingestion_time TIMESTAMP,
-            ingestion_date DATE,
-            source_system STRING,
-            batch_id STRING
-        )
-        USING iceberg
-        PARTITIONED BY (world, ingestion_date)
-        TBLPROPERTIES (
-            'format-version' = '2',
-            'write.format.default' = 'parquet',
-            'write.metadata.compression' = 'gzip',
-            'write.delete.mode' = 'merge-on-read'
-        )
-        """)
-
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
         partition = (
                     f"year={today_date.year}/"
@@ -258,33 +206,6 @@ class Bronze:
 
         Tabela criada: nessie.bronze.extra
         """
-
-        self.spark.sql("CREATE NAMESPACE IF NOT EXISTS nessie.bronze")
-
-        self.spark.sql("""
-        CREATE TABLE IF NOT EXISTS nessie.bronze.extra (
-            name STRING,
-            vocation STRING,
-            world STRING,
-            category STRING,
-            title STRING,
-            points INT,
-            ingestion_time TIMESTAMP,
-            ingestion_date DATE,
-            source_system STRING,
-            batch_id STRING,
-            source_file STRING
-        )
-        USING iceberg
-        PARTITIONED BY (world, ingestion_date)
-        TBLPROPERTIES (
-            'format-version' = '2',
-            'write.format.default' = 'parquet',
-            'write.metadata.compression' = 'gzip',
-            'write.delete.mode' = 'merge-on-read'
-        )
-        """)
-
         today_date = datetime.strptime(self.date_str, "%Y-%m-%d") if self.date_str else datetime.today()
         partition = (
                     f"year={today_date.year}/"
