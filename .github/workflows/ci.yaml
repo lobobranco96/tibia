@@ -32,7 +32,7 @@ jobs:
       # Formata o código automaticamente
       - name: Format code with Black
         run: |
-          black mnt
+          black mnt --exclude '\.ipynb'
 
       # Verifica o estilo do código (mas ignora avisos irrelevantes)
       - name: Lint code with Flake8
