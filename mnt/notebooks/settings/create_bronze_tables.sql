@@ -1,4 +1,4 @@
-# Criação das tabelas bronze
+# Criação das tabelas bronzes
 
 CREATE TABLE IF NOT EXISTS nessie.bronze.vocation (
     name STRING,
