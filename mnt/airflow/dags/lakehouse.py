@@ -62,7 +62,7 @@ def spark_task(task_id, app_path, args=None):
     Esta função encapsula as configurações necessárias para uso de:
     - Iceberg + Nessie
     - Credenciais AWS para S3/MinIO
-    - Inclusão de .jars obrigatórias para transações ACID e catálogo
+    - Inclusão de .jars obrigatórias para o funcionamento do iceberg/aws/nessie
     """
     conf = {
         "spark.jars": ",".join([
@@ -91,23 +91,41 @@ def spark_task(task_id, app_path, args=None):
     dag_id="lakehouse_pipeline",
     description="Lakehouse pipeline: processa dados da camada Bronze até Silver utilizando Spark + Iceberg.",
     default_args=default_args,
-    start_date=datetime(2025, 12, 27),
+    start_date=datetime(2025, 01, 05),
     tags=["tibia", "lakehouse", "etl"]
 )
 def lakehouse_pipeline():
     """
-    DAG responsável por orquestrar o processamento das camadas Bronze e Silver do Lakehouse Tibia.
+    DAG responsável por orquestrar o processamento do Lakehouse Tibia
+    para os domínios de vocation, skills e extra, contemplando as camadas
+    Bronze e Silver.
 
-    Fluxo:
-        - Aguarda a finalização da DAG de Landing.
-        - Inicia a pipeline com BashOperator.
-        - Executa tasks Bronze e Silver em paralelo por categoria.
-        - Finaliza a pipeline.
+    Fluxo da pipeline:
+        - Aguarda a disponibilidade dos dados brutos da camada Landing
+          no Data Lake (MinIO/S3), utilizando S3KeySensor para verificar
+          a existência do arquivo _SUCCESS de cada domínio:
+              • vocation
+              • skills
+              • extra
 
-    O TaskGroup "lakehouse" agrupa todos os processamentos Spark.
+        - Após a confirmação dos dados de Landing, cada domínio é processado
+          de forma independente e paralela.
+
+        - Para cada domínio:
+            • Executa a camada Bronze, responsável pela leitura dos dados brutos,
+              padronização de schema e persistência no formato Iceberg.
+            • Em seguida, executa a camada Silver, aplicando regras de negócio,
+              refinamento dos dados e controle histórico com versionamento
+              baseado no padrão SCD Type 2.
+
+        - As camadas Bronze e Silver são encadeadas dentro de TaskGroups,
+          garantindo organização, isolamento por domínio e melhor visualização
+          da DAG no Airflow.
+
+    O processamento é totalmente distribuído via Apache Spark e estruturado
+    segundo a arquitetura Medallion (Bronze → Silver), utilizando Apache Iceberg
+    como formato de tabela e Nessie como catálogo e controle de versões.
     """
-
-    # Espera a DAG de landing concluir
 
     wait_vocation = S3KeySensor(
          task_id="wait_for_vocation_landing",
@@ -211,4 +229,5 @@ def lakehouse_pipeline():
 
 
 lakehouse = lakehouse_pipeline()
+
 
