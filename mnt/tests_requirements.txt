@@ -6,4 +6,3 @@ flake8
 pytest
 lxml
 boto3
-black[jupyter] # formataçao para arquivos com a extesão .ipynb
