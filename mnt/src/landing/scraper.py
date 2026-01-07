@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 2
 DEFAULT_RETRIES = 1
 DEFAULT_WAIT = 3
-MAX_PAGES = 1
+MAX_PAGES = 20 # Controla o numero de paginas coletadas 
 
 
 # CLASSES AUXILIARES
