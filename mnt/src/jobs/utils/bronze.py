@@ -55,7 +55,13 @@ class Bronze:
     def __init__(self, spark, date_str=None):
         self.spark = spark
         self.date_str = date_str
+        
+        # Compressão padrão Parquet
+        self.spark.conf.set(
+            "spark.sql.parquet.compression.codec", "snappy"
+        )
 
+    
     #   MÉTODO: VOCATION
     def vocation(self):
         """
@@ -99,39 +105,29 @@ class Bronze:
         batch_id = str(uuid4())
         logging.info(f"Gerando batch_id: {batch_id}")
 
-        df_raw.printSchema()
-
+        
         # Normalização e padronização
         df_bronze = (
             df_raw.drop("Rank")
-            .withColumnRenamed("Name", "name")
-            .withColumnRenamed("Vocation", "vocation")
-            .withColumnRenamed("Level", "level")
-            .withColumnRenamed("World", "world")
-            .withColumnRenamed("Points", "experience")
-            .withColumnRenamed("WorldType", "world_type")
+            .selectExpr(
+                "Name as name",
+                "lower(trim(Vocation)) as vocation",
+                "lower(trim(World)) as world",
+                "cast(Level as int) as level",
+                "cast(regexp_replace(Points, ',', '') as long) as experience",
+                "WorldType as world_type")
             .withColumn("ingestion_time", F.current_timestamp())
             .withColumn("ingestion_date", F.current_date())
             .withColumn("source_system", F.lit("highscore_tibia_page"))
             .withColumn("batch_id", F.lit(batch_id))
-            .withColumn("experience", F.regexp_replace("experience", ",", "").cast("long"))
-            .withColumn("level", F.col("level").cast("int"))
-            .withColumn("vocation", F.trim(F.lower("vocation")))
-            .withColumn("world", F.trim(F.lower("world")))
-            .dropDuplicates()
+            .dropDuplicates(["name", "world"])
         )
+        
+        logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
+        df_bronze.writeTo("nessie.bronze.vocation").append()
+        logging.info("Carga concluída com sucesso.")
 
-        # Compressão padrão Parquet
-        self.spark.conf.set("spark.sql.parquet.compression.codec", "snappy")
-
-        record_count = df_bronze.count()
-
-        if record_count > 0:
-            logging.info(f"Inserindo {record_count} registros na Bronze com batch_id {batch_id}...")
-            df_bronze.writeTo("nessie.bronze.vocation").append()
-        else:
-            logging.warning("Nenhum registro encontrado para gravar na Bronze.")
-
+    
     #   MÉTODO: SKILLS
     def skills(self):
         """
@@ -166,36 +162,27 @@ class Bronze:
 
         batch_id = str(uuid4())
         logging.info(f"Gerando batch_id: {batch_id}")
-
-        df_raw.printSchema()
-
+        
         df_bronze = (
-            df_raw.drop("Rank", "Level")
-            .withColumnRenamed("Name", "name")
-            .withColumnRenamed("Vocation", "vocation")
-            .withColumnRenamed("World", "world")
-            .withColumnRenamed("Skill Level", "skill_level")
-            .withColumnRenamed("Category", "category")
+            df_raw
+            .selectExpr(
+                "Name as name",
+                "lower(trim(Vocation)) as vocation",
+                "lower(trim(World)) as world",
+                "cast(`Skill Level` as int) as skill_level",
+                "Category as category"
+            )
             .withColumn("ingestion_time", F.current_timestamp())
             .withColumn("ingestion_date", F.current_date())
             .withColumn("source_system", F.lit("highscore_tibia_page"))
             .withColumn("batch_id", F.lit(batch_id))
-            .withColumn("skill_level", F.col("skill_level").cast("int"))
-            .withColumn("vocation", F.trim(F.lower("vocation")))
-            .withColumn("world", F.trim(F.lower("world")))
-            .dropDuplicates()
+            .dropDuplicates(["name", "world"])
         )
 
-        self.spark.conf.set("spark.sql.parquet.compression.codec", "snappy")
-
-        record_count = df_bronze.count()
-
-        if record_count > 0:
-            logging.info(f"Inserindo {record_count} registros na Bronze com batch_id {batch_id}...")
-            df_bronze.writeTo("nessie.bronze.skills").append()
-        else:
-            logging.warning("Nenhum registro encontrado na Bronze Skills.")
-
+        logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
+        df_bronze.writeTo("nessie.bronze.skills").append()
+        logging.info("Carga concluída com sucesso.")
+        
     #   MÉTODO: EXTRA
     def extra(self):
         """
@@ -218,52 +205,46 @@ class Bronze:
 
         df_raw = self.spark.read.csv(path, header=True)
 
-        if df_raw.head(1) == []:
-            logging.warning("Nenhum arquivo encontrado em extra/. Encerrando Bronze Extra.")
-            return
-
-        df_raw.printSchema()
-        
         # Normaliza nomes (lowercase + underscore)
         df_raw = df_raw.toDF(*[c.lower().replace(" ", "_") for c in df_raw.columns])
 
-        # Correção de nomes alternativos
-        rename_map = {"score": "points", "skill_level": "points"}
-        for old, new in rename_map.items():
-            if old in df_raw.columns and new not in df_raw.columns:
-                df_raw = df_raw.withColumnRenamed(old, new)
-
-        # Colunas finais esperadas
+        # Normaliza nomes alternativos
+        rename_map = {"score": "points"}
+        df_raw = df_raw.selectExpr(
+            *[
+                f"{c} as {rename_map.get(c, c)}"
+                for c in df_raw.columns
+            ]
+        )
+        
         final_columns = ["name", "vocation", "world", "category", "title", "points"]
-
-        # Cria colunas faltantes
-        for col in final_columns:
-            if col not in df_raw.columns:
-                df_raw = df_raw.withColumn(col, F.lit(None))
-
-        df_bronze = df_raw.select(*final_columns)
-
+        
+        # Garante schema final
+        df_bronze = df_raw.select(
+            *[
+                F.col(c) if c in df_raw.columns else F.lit(None).alias(c)
+                for c in final_columns
+            ]
+        )
+        
         batch_id = str(uuid4())
+        
         df_bronze = (
             df_bronze
+            .selectExpr(
+                "*",
+                "cast(points as int) as points",
+                "lower(trim(vocation)) as vocation",
+                "lower(trim(world)) as world"
+            )
             .withColumn("ingestion_time", F.current_timestamp())
             .withColumn("ingestion_date", F.current_date())
             .withColumn("source_system", F.lit("highscore_tibia_page"))
             .withColumn("batch_id", F.lit(batch_id))
             .withColumn("source_file", F.input_file_name())
-            .withColumn("points", F.col("points").cast("int"))
-            .withColumn("vocation", F.trim(F.lower("vocation")))
-            .withColumn("world", F.trim(F.lower("world")))
-            .dropDuplicates()
         )
+        
+        logging.info(f"Inserindo registros na Bronze Extra com batch_id {batch_id}...")
+        df_bronze.writeTo("nessie.bronze.extra").append()
+        logging.info("Carga concluída com sucesso.")
 
-        self.spark.conf.set("spark.sql.parquet.compression.codec", "snappy")
-
-        record_count = df_bronze.count()
-
-        if record_count > 0:
-            logging.info(f"Inserindo {record_count} registros na Bronze Extra com batch_id {batch_id}...")
-            df_bronze.writeTo("nessie.bronze.extra").append()
-            logging.info("Carga concluída com sucesso.")
-        else:
-            logging.warning("Nenhum registro encontrado na Bronze Extra.")
