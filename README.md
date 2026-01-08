@@ -30,6 +30,12 @@ Estruturar por:
  - Garantir tasks independentes por vocação e categoria no Airflow, permitindo paralelismo e falhas isoladas.
  - Salvar dados de forma estruturada na camada Bronze, permitindo transformações em Silver e Gold.
 
+# Decisão arquitetural
+Mesmo com ingestões diárias pequenas, a camada Bronze foi construída sobre Apache Iceberg para garantir histórico, versionamento e consistência ao longo do tempo.
+
+O Spark é utilizado não pelo volume atual dos dados, mas por ser o engine mais maduro para escrita transacional em Iceberg, integração com Nessie e evolução futura do pipeline.
+
+Essa abordagem prepara o Lakehouse para crescimento contínuo, auditoria e análises temporais sem necessidade de refatoração estrutural.
 
 ## Fluxo
 
@@ -121,7 +127,7 @@ A camada Bronze é responsável por estruturar os dados brutos provenientes da c
   - As tabelas Iceberg são criadas automaticamente no catálogo Nessie.
   - São validadas colunas obrigatórias e aplicadas normalizações leves (tipos, textos e nomes).
   - Os dados recebem metadados de ingestão (batch_id, ingestion_time, ingestion_date).
-  - Registros duplicados são removidos.
+  - Registros duplicados dentro do mesmo batch são removidos
 
 A escrita é realizada de forma incremental (append), preservando o histórico completo.
 Essa camada serve como base confiável e governada para as transformações nas camadas Silver e Gold.
