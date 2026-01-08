@@ -114,7 +114,10 @@ def landing_highscores_pipeline():
         @task
         def extract_fist():
             return extract_category("fist")
-
+            
+        def extract_fishing():
+            return extract_category("fishing")
+            
         extract_tasks = [
             extract_axe(),
             extract_sword(),
@@ -122,7 +125,8 @@ def landing_highscores_pipeline():
             extract_club(),
             extract_distance(),
             extract_shielding(),
-            extract_fist()
+            extract_fist(),
+            extract_fishing()
         ]
         success = write_success_file("skills")
 
@@ -136,10 +140,6 @@ def landing_highscores_pipeline():
         @task
         def extract_achievements():
             return extract_category("achievements")
-
-        @task
-        def extract_fishing():
-            return extract_category("fishing")
 
         @task
         def extract_loyalty():
@@ -163,7 +163,6 @@ def landing_highscores_pipeline():
 
         extract_tasks = [
             extract_achievements(),
-            extract_fishing(),
             extract_loyalty(),
             extract_drome(),
             extract_boss(),
@@ -178,5 +177,6 @@ def landing_highscores_pipeline():
     extract_vocation_group
     extract_skills_group
     extract_extra_group
+
 
 landing = landing_highscores_pipeline()
