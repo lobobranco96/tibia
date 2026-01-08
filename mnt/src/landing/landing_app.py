@@ -91,11 +91,11 @@ def extract_category(category: str) -> str:
     try:
         # Categorias válidas
         valid_extra = [
-            "achievements", "fishing", "loyalty", "drome", "boss", "charm", "goshnair"
+            "achievements", "loyalty", "drome", "boss", "charm", "goshnair"
         ]
 
         valid_skills = [
-            "axe", "sword", "club", "distance", "magic_level", "fist", "shielding"
+            "axe", "sword", "club", "distance", "magic_level", "fist", "shielding", "fishing"
         ]
 
         category = category.lower().strip()
@@ -109,8 +109,8 @@ def extract_category(category: str) -> str:
             logger.warning(
                 f"Categoria inválida: {category}. "
                 "Use uma das seguintes opções:\n"
-                "Extras: achievements, fishing, loyalty, drome, boss, charm, goshnair\n"
-                "Skills: axe, sword, club, distance, magic_level, fist, shielding"
+                "Extras: achievements, loyalty, drome, boss, charm, goshnair\n"
+                "Skills: axe, sword, club, distance, magic_level, fist, shielding, fishing"
             )
             return None
 
@@ -138,4 +138,5 @@ def extract_category(category: str) -> str:
     except Exception as e:
         logger.error(f"Erro durante extração da categoria '{category}': {e}", exc_info=True)
         return None
+
 
