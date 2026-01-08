@@ -91,15 +91,20 @@ class Bronze:
         logging.info(f"Lendo dados de: {path}")
 
         # Lê arquivo CSV
-        df_raw = self.spark.read.csv(path, header=True)
-
+        try:
+            df_raw = self.spark.read.csv(path, header=True)
+        except Exception as e:
+            logging.exception(f"Erro ao ler arquivos do path {path}")
+            raise
+            
         # Validação de colunas esperadas
         colunas_esperadas = {"Rank", "Name", "Vocation", "World", "Level", "Points", "WorldType"}
         colunas_faltando = colunas_esperadas - set(df_raw.columns)
 
         if colunas_faltando:
-            logging.error(f"Colunas ausentes no CSV: {colunas_faltando}")
-            return
+            msg = f"Colunas ausentes no CSV: {colunas_faltando}"
+            logging.error(msg)
+            raise ValueError(msg)
 
         # Gera batch_id para auditoria
         batch_id = str(uuid4())
@@ -123,9 +128,14 @@ class Bronze:
             .dropDuplicates(["name", "world"])
         )
         
-        logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
-        df_bronze.writeTo("nessie.bronze.vocation").append()
-        logging.info("Carga concluída com sucesso.")
+        try:
+            logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
+            df_bronze.writeTo("nessie.bronze.vocation").append()
+            logging.info("Carga concluída com sucesso.")
+        except Exception as e:
+            logging.exception("Erro ao escrever na tabela Iceberg")
+            raise
+
 
     
     #   MÉTODO: SKILLS
@@ -151,14 +161,18 @@ class Bronze:
         path = f"s3a://lakehouse/landing/{partition}/skills/"
         logging.info(f"Lendo dados de: {path}")
 
-        df_raw = self.spark.read.csv(path, header=True)
-
+        try:
+            df_raw = self.spark.read.csv(path, header=True)
+        except Exception as e:
+            logging.exception(f"Erro ao ler arquivos do path {path}")
+            raise
         colunas_esperadas = {'Rank', 'Name', 'Vocation', 'World', 'Skill Level', 'Category'}
         colunas_faltando = colunas_esperadas - set(df_raw.columns)
 
         if colunas_faltando:
-            logging.error(f"Colunas ausentes no CSV: {colunas_faltando}")
-            return
+            msg = f"Colunas ausentes no CSV: {colunas_faltando}"
+            logging.error(msg)
+            raise ValueError(msg)
 
         batch_id = str(uuid4())
         logging.info(f"Gerando batch_id: {batch_id}")
@@ -179,8 +193,14 @@ class Bronze:
             .dropDuplicates(["name", "world"])
         )
 
-        logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
-        df_bronze.writeTo("nessie.bronze.skills").append()
+        try: 
+            logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
+            df_bronze.writeTo("nessie.bronze.skills").append()
+            logging.info("Carga concluída com sucesso.")
+        except Exception as e:
+            logging.exception("Erro ao escrever na tabela Iceberg")
+            raise
+
         logging.info("Carga concluída com sucesso.")
         
     #   MÉTODO: EXTRA
@@ -203,8 +223,12 @@ class Bronze:
         path = f"s3a://lakehouse/landing/{partition}/extra/"
         logging.info(f"Lendo dados de: {path}")
 
-        df_raw = self.spark.read.csv(path, header=True)
-
+        try:
+            df_raw = self.spark.read.csv(path, header=True)
+        except Exception as e:
+            logging.exception(f"Erro ao ler arquivos do path {path}")
+            raise
+            
         # Normaliza nomes (lowercase + underscore)
         df_raw = df_raw.toDF(*[c.lower().replace(" ", "_") for c in df_raw.columns])
 
@@ -244,7 +268,13 @@ class Bronze:
             .withColumn("source_file", F.input_file_name())
         )
         
-        logging.info(f"Inserindo registros na Bronze Extra com batch_id {batch_id}...")
-        df_bronze.writeTo("nessie.bronze.extra").append()
-        logging.info("Carga concluída com sucesso.")
+        try:
+            logging.info(f"Inserindo registros na Bronze Extra com batch_id {batch_id}...")
+            df_bronze.writeTo("nessie.bronze.extra").append()
+            logging.info("Carga concluída com sucesso.")
+        except Exception as e:
+            logging.exception("Erro ao escrever na tabela Iceberg")
+            raise
+
+
 
