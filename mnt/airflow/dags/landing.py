@@ -5,6 +5,9 @@ from airflow.decorators import dag, task
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
 from src.landing.landing_app import extract_vocation, extract_category
+#from src.landing.landing_app import run_extract_vocation, run_extract_category
+#from airflow.models.baseoperator import chain
+
 
 
 default_args = {
@@ -81,8 +84,11 @@ def landing_highscores_pipeline():
             extract_druid(),
             extract_monk(),
         ]
+
         success = write_success_file("vocation")
+        #chain(*extract_tasks, success)
         extract_tasks >> success
+
 
     # TaskGroup: EXTRAÇÃO DE SKILLS
     with TaskGroup(group_id="extract_skills") as extract_skills_group:
@@ -110,14 +116,15 @@ def landing_highscores_pipeline():
         @task
         def extract_shielding():
             return extract_category("shielding")
-        
+
         @task
         def extract_fist():
             return extract_category("fist")
-            
+
+        @task
         def extract_fishing():
             return extract_category("fishing")
-            
+
         extract_tasks = [
             extract_axe(),
             extract_sword(),
@@ -126,15 +133,14 @@ def landing_highscores_pipeline():
             extract_distance(),
             extract_shielding(),
             extract_fist(),
-            extract_fishing()
+            extract_fishing(),
         ]
-        success = write_success_file("skills")
 
+        success = write_success_file("skills")
+        #chain(*extract_tasks, success)
         extract_tasks >> success
 
-    # ============================================================
     # TaskGroup: EXTRAÇÃO DE EXTRA
-    # ============================================================
     with TaskGroup(group_id="extract_extra") as extract_extra_group:
 
         @task
@@ -171,9 +177,10 @@ def landing_highscores_pipeline():
         ]
 
         success = write_success_file("extra")
+        #chain(*extract_tasks, success)
         extract_tasks >> success
-    # Dependências
 
+    # Dependências
     extract_vocation_group
     extract_skills_group
     extract_extra_group
