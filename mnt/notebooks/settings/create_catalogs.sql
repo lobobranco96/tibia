@@ -1,5 +1,3 @@
-# criaçao dos catalogos
-
 CREATE NAMESPACE IF NOT EXISTS nessie.bronze
 
 CREATE NAMESPACE IF NOT EXISTS nessie.silver

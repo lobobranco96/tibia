@@ -1,4 +1,3 @@
-# Criaçao das tabelas silvers
 CREATE TABLE IF NOT EXISTS nessie.silver.vocation (
   name STRING,
   world STRING,
