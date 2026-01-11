@@ -140,3 +140,8 @@ def extract_category(category: str) -> str:
         return None
 
 
+def run_extract_vocation(vocation: str):
+    return extract_vocation(vocation)
+
+def run_extract_category(category: str):
+    return extract_category(category)
