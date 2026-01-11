@@ -91,7 +91,7 @@ def extract_category(category: str) -> str:
     try:
         # Categorias válidas
         valid_extra = [
-            "achievements", "loyalty", "drome", "boss", "charm", "goshnair"
+            "achievements", "fishing", "loyalty", "drome", "boss", "charm", "goshnair"
         ]
 
         valid_skills = [
@@ -139,9 +139,3 @@ def extract_category(category: str) -> str:
         logger.error(f"Erro durante extração da categoria '{category}': {e}", exc_info=True)
         return None
 
-
-def run_extract_vocation(vocation: str):
-    return extract_vocation(vocation)
-
-def run_extract_category(category: str):
-    return extract_category(category)
