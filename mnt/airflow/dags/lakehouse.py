@@ -72,7 +72,19 @@ def spark_task(task_id, app_path, args=None):
             "/opt/spark/jars/nessie-spark-extensions-3.5_2.12-0.99.0.jar",
             "/opt/spark/jars/iceberg-aws-bundle-1.6.1.jar",
             "/opt/spark/jars/bundle-2.28.13.jar"
-        ])
+        ]),
+
+        # LIMITAÇÃO DE RECURSOS
+        "spark.executor.instances": "1",
+        "spark.executor.cores": "1",
+        "spark.executor.memory": "512m",
+        "spark.executor.memoryOverhead": "256m",
+        "spark.driver.memory": "512m",
+
+        # PARA ICEBERG + SMALL DATA
+        "spark.sql.shuffle.partitions": "8",
+        "spark.default.parallelism": "8",
+
     }
 
     return SparkSubmitOperator(
@@ -229,5 +241,6 @@ def lakehouse_pipeline():
 
 
 lakehouse = lakehouse_pipeline()
+
 
 
