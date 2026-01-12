@@ -50,14 +50,19 @@ def create_spark_session(appname):
         .set("spark.hadoop.fs.defaultFS", "s3a://lakehouse")
 
         # RECURSOS
-        .set("spark.executor.memory", "2g")
-        .set("spark.executor.memoryOverhead", "512m")
-        .set("spark.executor.cores", "1")
-        .set("spark.driver.memory", "1g")   
         .set("spark.executor.instances", "1")
+        .set("spark.executor.cores", "1")
+        .set("spark.executor.memory", "512m")
+        .set("spark.executor.memoryOverhead", "256m")
+        .set("spark.driver.memory", "512m")
+        
+        .set("spark.sql.shuffle.partitions", "8")
+        .set("spark.default.parallelism", "8")
 
+        
     )
 
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     return spark
+
 
