@@ -18,8 +18,8 @@ x-spark-worker-default: &spark_worker_default
   environment:
     - SPARK_MODE=worker
     - SPARK_MASTER=spark://spark-master:7077
-    - SPARK_WORKER_MEMORY=2G
-    - SPARK_WORKER_CORES=2
+    - SPARK_WORKER_MEMORY=1G
+    - SPARK_WORKER_CORES=1
   command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
   networks:
     - lakehouse_network
@@ -55,3 +55,4 @@ services:
 networks:
   lakehouse_network:
     driver: bridge
+
