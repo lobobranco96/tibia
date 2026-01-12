@@ -5,10 +5,6 @@ from airflow.decorators import dag, task
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.empty import EmptyOperator
 from src.landing.landing_app import extract_vocation, extract_category
-#from src.landing.landing_app import run_extract_vocation, run_extract_category
-#from airflow.models.baseoperator import chain
-
-
 
 default_args = {
     "owner": "lobobranco",
@@ -16,14 +12,13 @@ default_args = {
     "retry_delay": timedelta(minutes=2),
 }
 
-
 @dag(
     dag_id="landing_highscores_pipeline",
     description="Pipeline de extração de Pagina highscores do Tibia",
     default_args=default_args,
     start_date=datetime(2025, 10, 15),
     catchup=False,
-    tags=["tibia", "extract"]
+    tags=["tibia", "extract", "landing"]
 )
 def landing_highscores_pipeline():
 
@@ -85,8 +80,7 @@ def landing_highscores_pipeline():
             extract_monk(),
         ]
 
-        success = write_success_file("vocation")
-        #chain(*extract_tasks, success)
+        success = write_success_file("experience")
         extract_tasks >> success
 
 
@@ -137,7 +131,6 @@ def landing_highscores_pipeline():
         ]
 
         success = write_success_file("skills")
-        #chain(*extract_tasks, success)
         extract_tasks >> success
 
     # TaskGroup: EXTRAÇÃO DE EXTRA
@@ -177,13 +170,13 @@ def landing_highscores_pipeline():
         ]
 
         success = write_success_file("extra")
-        #chain(*extract_tasks, success)
         extract_tasks >> success
 
     # Dependências
     extract_vocation_group
     extract_skills_group
     extract_extra_group
+
 
 
 landing = landing_highscores_pipeline()
