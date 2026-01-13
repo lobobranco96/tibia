@@ -234,12 +234,10 @@ class Bronze:
 
         # Normaliza nomes alternativos
         rename_map = {"score": "points"}
-        df_raw = df_raw.selectExpr(
-            *[
-                f"{c} as {rename_map.get(c, c)}"
-                for c in df_raw.columns
-            ]
-        )
+
+        for old, new in rename_map.items():
+            if old in df_raw.columns:
+                df_raw = df_raw.withColumnRenamed(old, new)
         
         final_columns = ["name", "vocation", "world", "category", "title", "points"]
         
@@ -255,12 +253,9 @@ class Bronze:
         
         df_bronze = (
             df_bronze
-            .selectExpr(
-                "*",
-                "cast(points as int) as points",
-                "lower(trim(vocation)) as vocation",
-                "lower(trim(world)) as world"
-            )
+            .withColumn("points", F.col("points").cast("int"))
+            .withColumn("vocation", F.lower(F.trim(F.col("vocation"))))
+            .withColumn("world", F.lower(F.trim(F.col("world"))))
             .withColumn("ingestion_time", F.current_timestamp())
             .withColumn("ingestion_date", F.current_date())
             .withColumn("source_system", F.lit("highscore_tibia_page"))

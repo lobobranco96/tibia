@@ -257,7 +257,6 @@ class Silver:
                 s.world,
                 s.category,
                 s.vocation,
-                s.level,
                 s.skill_level,
                 s.ingestion_time,
                 current_timestamp() AS start_date,
