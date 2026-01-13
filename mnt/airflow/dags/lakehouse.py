@@ -223,7 +223,7 @@ def lakehouse_pipeline():
         bronze_extra = spark_task(
             "bronze_extra",
             BRONZE_SCRIPT,
-            args=["extra"]#, "--date", "2026-01-03"]
+            args=["extra", "--date", "2026-01-12"]
         )
 
         silver_extra = spark_task(
