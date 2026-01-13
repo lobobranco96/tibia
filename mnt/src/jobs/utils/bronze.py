@@ -127,7 +127,8 @@ class Bronze:
             .withColumn("batch_id", F.lit(batch_id))
             .dropDuplicates(["name", "world"])
         )
-        
+
+        df_bronze = df_bronze.repartition("world", "ingestion_date")
         try:
             logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
             df_bronze.writeTo("nessie.bronze.vocation").append()
@@ -192,7 +193,8 @@ class Bronze:
             .withColumn("batch_id", F.lit(batch_id))
             .dropDuplicates(["name", "world"])
         )
-
+        
+        df_bronze = df_bronze.repartition("world", "ingestion_date")
         try: 
             logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
             df_bronze.writeTo("nessie.bronze.skills").append()
@@ -263,6 +265,7 @@ class Bronze:
             .withColumn("source_file", F.input_file_name())
         )
         
+        df_bronze = df_bronze.repartition("world", "ingestion_date")   
         try:
             logging.info(f"Inserindo registros na Bronze Extra com batch_id {batch_id}...")
             df_bronze.writeTo("nessie.bronze.extra").append()
@@ -270,6 +273,7 @@ class Bronze:
         except Exception as e:
             logging.exception("Erro ao escrever na tabela Iceberg")
             raise
+
 
 
 
