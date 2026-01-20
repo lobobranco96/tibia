@@ -10,35 +10,35 @@ x-common-config: &default_config
     retries: 10
     start_period: 10s
 
-x-spark-worker-default: &spark_worker_default
+x-spark-image: &spark_image
   build:
     context: ../docker/spark
     dockerfile: Dockerfile
-  <<: *default_config
+
+x-spark-base: &spark_base
+  <<: [*spark_image, *default_config]
+
+x-spark-worker-default: &spark_worker_default
+  <<: *spark_base
   environment:
     - SPARK_MODE=worker
     - SPARK_MASTER=spark://spark-master:7077
-    - SPARK_WORKER_MEMORY=1G
-    - SPARK_WORKER_CORES=1
+    - SPARK_WORKER_CORES=2
+    - SPARK_WORKER_MEMORY=2G
   command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
-  networks:
-    - lakehouse_network
 
 services:
   spark-master:
-    build: ../docker/spark
-    container_name: spark-master
-    <<: *default_config
+    <<: *spark_base
     environment:
       - SPARK_MODE=master
+      - SPARK_LOCAL_IP=spark-master
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master", "--host", "spark-master"]
     volumes:
       - ../mnt/src/jobs:/spark
     ports:
       - "9090:8080"
       - "7077:7077"
-    networks:
-      - lakehouse_network
 
   spark-worker-1:
     container_name: spark-worker-1
