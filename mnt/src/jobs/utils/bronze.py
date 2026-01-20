@@ -133,6 +133,9 @@ class Bronze:
             logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
             df_bronze.writeTo("nessie.bronze.vocation").append()
             logging.info("Carga concluída com sucesso.")
+            self.spark.stop()
+            logging.info("Sessão spark encerrada com sucesso.")
+
         except Exception as e:
             logging.exception("Erro ao escrever na tabela Iceberg")
             raise
@@ -199,11 +202,12 @@ class Bronze:
             logging.info(f"Inserindo registros na Bronze com batch_id {batch_id}...")
             df_bronze.writeTo("nessie.bronze.skills").append()
             logging.info("Carga concluída com sucesso.")
+            self.spark.stop()
+            logging.info("Sessão spark encerrada com sucesso.")
+
         except Exception as e:
             logging.exception("Erro ao escrever na tabela Iceberg")
             raise
-
-        logging.info("Carga concluída com sucesso.")
         
     #   MÉTODO: EXTRA
     def extra(self):
@@ -222,7 +226,7 @@ class Bronze:
                     f"day={today_date.strftime('%d')}"
                     )
         
-        path = f"s3a://lakehouse/landing/{partition}/extra/"
+        path = f"s3a://lakehouse/landing/{partition}/extra/*.csv"
         logging.info(f"Lendo dados de: {path}")
 
         try:
@@ -270,10 +274,11 @@ class Bronze:
             logging.info(f"Inserindo registros na Bronze Extra com batch_id {batch_id}...")
             df_bronze.writeTo("nessie.bronze.extra").append()
             logging.info("Carga concluída com sucesso.")
+            self.spark.stop()
+            logging.info("Sessão spark encerrada com sucesso.")
+
         except Exception as e:
             logging.exception("Erro ao escrever na tabela Iceberg")
             raise
-
-
 
 

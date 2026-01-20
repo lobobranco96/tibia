@@ -165,6 +165,8 @@ class Silver:
             logging.exception(f"Falha no job Silver: {str(e)}")
             sys.exit(1)
 
+        self.spark.stop()
+        logging.info("Sessão spark encerrada com sucesso.")
     # =======================================================================
     # SKILLS
     # =======================================================================
@@ -281,6 +283,9 @@ class Silver:
 
             logging.info(f"Total de registros na Silver: {total_rows}")
             logging.info(f"Registros atuais (is_current = true): {current_rows}")
+
+            self.spark.stop()
+            logging.info("Sessão spark encerrada com sucesso.")
 
         except Exception as e:
             logging.exception(f"Falha no job Silver (skills): {str(e)}")
@@ -403,6 +408,9 @@ class Silver:
             logging.info(f"Total de registros: {total_rows}")
             logging.info(f"Registros atuais (is_current = true): {current_rows}")
     
+            self.spark.stop()
+            logging.info("Sessão spark encerrada com sucesso.")
+            
         except Exception as e:
             logging.exception(f"Falha no job Silver Extra: {str(e)}")
             sys.exit(1)

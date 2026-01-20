@@ -21,6 +21,19 @@ def create_spark_session(appname):
             "spark.sql.extensions",
             "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
         )
+        
+        # 🔥 MEMÓRIA (ESSENCIAL PARA ICEBERG)
+        .set("spark.executor.instances", "1")
+        .set("spark.executor.cores", "1")
+        .set("spark.executor.memory", "2g")
+        .set("spark.executor.memoryOverhead", "512m")
+        .set("spark.driver.memory", "2g")
+        
+        .set("spark.sql.shuffle.partitions", "8")
+        .set("spark.default.parallelism", "8")
+        .set("spark.sql.iceberg.write.distribution-mode", "none")
+        .set("spark.sql.iceberg.write.fanout.enabled", "false")
+        .set("spark.sql.iceberg.write.distribution-mode", "none")
 
         # REGISTRO DO CATÁLOGO NESSIE
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
