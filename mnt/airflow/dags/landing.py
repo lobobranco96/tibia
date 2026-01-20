@@ -134,49 +134,49 @@ def landing_highscores_pipeline():
         extract_tasks >> success
 
     # TaskGroup: EXTRAÇÃO DE EXTRA
-    with TaskGroup(group_id="extract_extra") as extract_extra_group:
+    # with TaskGroup(group_id="extract_extra") as extract_extra_group:
 
-        @task
-        def extract_achievements():
-            return extract_category("achievements")
+    #     @task
+    #     def extract_achievements():
+    #         return extract_category("achievements")
 
-        @task
-        def extract_loyalty():
-            return extract_category("loyalty")
+    #     @task
+    #     def extract_loyalty():
+    #         return extract_category("loyalty")
 
-        @task
-        def extract_drome():
-            return extract_category("drome")
+    #     @task
+    #     def extract_drome():
+    #         return extract_category("drome")
 
-        @task
-        def extract_boss():
-            return extract_category("boss")
+    #     @task
+    #     def extract_boss():
+    #         return extract_category("boss")
 
-        @task
-        def extract_charm():
-            return extract_category("charm")
+    #     @task
+    #     def extract_charm():
+    #         return extract_category("charm")
 
-        @task
-        def extract_goshnair():
-            return extract_category("goshnair")
+    #     @task
+    #     def extract_goshnair():
+    #         return extract_category("goshnair")
 
-        extract_tasks = [
-            extract_achievements(),
-            extract_loyalty(),
-            extract_drome(),
-            extract_boss(),
-            extract_charm(),
-            extract_goshnair(),
-        ]
+    #     extract_tasks = [
+    #         extract_achievements(),
+    #         extract_loyalty(),
+    #         extract_drome(),
+    #         extract_boss(),
+    #         extract_charm(),
+    #         extract_goshnair(),
+    #     ]
 
-        success = write_success_file("extra")
-        extract_tasks >> success
+    #     success = write_success_file("extra")
+    #     extract_tasks >> success
 
     # Dependências
     extract_vocation_group
     extract_skills_group
-    extract_extra_group
-
+    # extract_extra_group  (desativado)
+ 
 
 
 landing = landing_highscores_pipeline()
