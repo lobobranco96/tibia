@@ -211,3 +211,8 @@ __marimo__/
 mnt/minio/.minio.sys/
 colab/
 texto.txt
+
+
+# lakehouse data
+mnt/minio/lakehouse/bronze/skills_e25e1c12-0f35-482e-b8ad-1e724ea368c0/data/  
+mnt/minio/lakehouse/bronze/vocation_8de76cce-f9cb-435b-a74b-e667309b91f6/data/
