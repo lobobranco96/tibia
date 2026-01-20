@@ -78,7 +78,7 @@ def spark_task(task_id, app_path, args=None):
         "spark.executor.instances": "1",
         "spark.executor.cores": "1",
         "spark.executor.memory": "512m",
-        "spark.executor.memoryOverhead": "256m",
+        "spark.executor.memoryOverhead": "512m",
         "spark.driver.memory": "512m",
 
         # PARA ICEBERG + SMALL DATA
@@ -90,7 +90,7 @@ def spark_task(task_id, app_path, args=None):
     return SparkSubmitOperator(
         task_id=task_id,
         application=app_path,
-       # pool="spark_pool",
+        pool="spark_pool",
         conn_id="spark_default",
         conf=conf,
         py_files="/opt/airflow/dags/src/jobs",
@@ -171,21 +171,21 @@ def lakehouse_pipeline():
          timeout=60 * 60 * 3,
      )
 
-    wait_extra = S3KeySensor(
-        task_id="wait_for_extra_landing",
-        bucket_name="lakehouse",
-        bucket_key=(
-            "landing/"
-            "year={{ data_interval_start.strftime('%Y') }}/"
-            "month={{ data_interval_start.strftime('%m') }}/"
-            "day={{ data_interval_start.strftime('%d') }}/"
-            "extra/_SUCCESS"
-        ),
-        aws_conn_id="minio_s3",
-        deferrable=False,
-        poke_interval=60,
-        timeout=60 * 60 * 3,
-    )
+    # wait_extra = S3KeySensor(
+    #     task_id="wait_for_extra_landing",
+    #     bucket_name="lakehouse",
+    #     bucket_key=(
+    #         "landing/"
+    #         "year={{ data_interval_start.strftime('%Y') }}/"
+    #         "month={{ data_interval_start.strftime('%m') }}/"
+    #         "day={{ data_interval_start.strftime('%d') }}/"
+    #         "extra/_SUCCESS"
+    #     ),
+    #     aws_conn_id="minio_s3",
+    #     deferrable=False,
+    #     poke_interval=60,
+    #     timeout=60 * 60 * 3,
+    # )
     with TaskGroup(group_id="vocation_lakehouse") as vocation_group:
 
         bronze_vocation = spark_task(
@@ -218,26 +218,27 @@ def lakehouse_pipeline():
 
         bronze_skills >> silver_skills
 
-    with TaskGroup(group_id="extra_lakehouse") as extra_group:
+    # DESATIVADO (BUG JAVA HEAP MEMORY)
+    # with TaskGroup(group_id="extra_lakehouse") as extra_group:
 
-        bronze_extra = spark_task(
-            "bronze_extra",
-            BRONZE_SCRIPT,
-            args=["extra", "--date", "2026-01-12"]
-        )
+    #     bronze_extra = spark_task(
+    #         "bronze_extra",
+    #         BRONZE_SCRIPT,
+    #         args=["extra", "--date", "2026-01-12"]
+    #     )
 
-        silver_extra = spark_task(
-            "silver_extra",
-            SILVER_SCRIPT,
-            args=["extra"]
-        )
+    #     silver_extra = spark_task(
+    #         "silver_extra",
+    #         SILVER_SCRIPT,
+    #         args=["extra"]
+    #     )
 
-        bronze_extra >> silver_extra
+    #     bronze_extra >> silver_extra
 
     # Dependências principais da DAG
     wait_vocation >> vocation_group
     wait_skills >> skills_group
-    wait_extra >> extra_group
+    # wait_extra >> extra_group
 
 
 lakehouse = lakehouse_pipeline()
