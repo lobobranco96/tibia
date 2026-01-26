@@ -30,6 +30,7 @@ Tecnologias principais:
 
 BRONZE_SCRIPT = "/opt/airflow/dags/src/jobs/bronze_job.py"
 SILVER_SCRIPT = "/opt/airflow/dags/src/jobs/silver_job.py"
+GOLD_SCRIPT = "/opt/airflow/dags/src/jobs/gold_job.py"
 
 default_args = {
     "owner": "lobobranco",
@@ -171,21 +172,6 @@ def lakehouse_pipeline():
          timeout=60 * 60 * 3,
      )
 
-    # wait_extra = S3KeySensor(
-    #     task_id="wait_for_extra_landing",
-    #     bucket_name="lakehouse",
-    #     bucket_key=(
-    #         "landing/"
-    #         "year={{ data_interval_start.strftime('%Y') }}/"
-    #         "month={{ data_interval_start.strftime('%m') }}/"
-    #         "day={{ data_interval_start.strftime('%d') }}/"
-    #         "extra/_SUCCESS"
-    #     ),
-    #     aws_conn_id="minio_s3",
-    #     deferrable=False,
-    #     poke_interval=60,
-    #     timeout=60 * 60 * 3,
-    # )
     with TaskGroup(group_id="vocation_lakehouse") as vocation_group:
 
         bronze_vocation = spark_task(
@@ -207,7 +193,7 @@ def lakehouse_pipeline():
         bronze_skills = spark_task(
              "bronze_skills",
              BRONZE_SCRIPT,
-             args=["skills"]#,~ "--date", "2026-01-03"]
+             args=["skills"]#, "--date", "2026-01-03"]
          )
 
         silver_skills = spark_task(
@@ -218,27 +204,25 @@ def lakehouse_pipeline():
 
         bronze_skills >> silver_skills
 
-    # DESATIVADO (BUG JAVA HEAP MEMORY)
-    # with TaskGroup(group_id="extra_lakehouse") as extra_group:
+    gold_start_checkpoint = BashOperator(
+        task_id="gold_start_checkpoint",
+        bash_command="""
+         "Bronze e Silver finalizados. Iniciando camada Gold..."   
+        date
+        """
+    )
 
-    #     bronze_extra = spark_task(
-    #         "bronze_extra",
-    #         BRONZE_SCRIPT,
-    #         args=["extra", "--date", "2026-01-12"]
-    #     )
+    gold_job = spark_task(
+        "Gold_Layer",
+        GOLD_SCRIPT)
 
-    #     silver_extra = spark_task(
-    #         "silver_extra",
-    #         SILVER_SCRIPT,
-    #         args=["extra"]
-    #     )
-
-    #     bronze_extra >> silver_extra
 
     # Dependências principais da DAG
     wait_vocation >> vocation_group
     wait_skills >> skills_group
-    # wait_extra >> extra_group
+
+    [vocation_group, skills_group] >> gold_start_checkpoint
+    gold_start_checkpoint >> gold_job
 
 
 lakehouse = lakehouse_pipeline()
