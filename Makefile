@@ -17,5 +17,4 @@ build:
 	docker compose -f services/lakehouse.yaml build
 
 # Reinicia o Airflow e os serviços de observabilidade
-
 restart: down up docker compose -f services/observability.yaml up -d 	docker compose -f services/observability.yaml down
