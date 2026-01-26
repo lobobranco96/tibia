@@ -129,3 +129,8 @@ if __name__ == "__main__":
     except Exception as e:
         logging.exception(f"Falha no job Silver: {str(e)}")
         sys.exit(1)
+
+    finally:
+        if spark:
+            spark.stop()
+            logging.info("Sessão Spark Silver encerrado com sucesso.")

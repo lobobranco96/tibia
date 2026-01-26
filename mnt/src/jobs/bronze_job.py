@@ -128,3 +128,8 @@ if __name__ == "__main__":
     except Exception as e:
         logging.exception(f"Falha no job Bronze: {str(e)}")
         sys.exit(1)
+        
+    finally:
+        if spark:
+            spark.stop()
+            logging.info("Sessão Spark Bronze encerrado com sucesso.")
