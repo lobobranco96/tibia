@@ -207,15 +207,14 @@ def lakehouse_pipeline():
     gold_start_checkpoint = BashOperator(
         task_id="gold_start_checkpoint",
         bash_command="""
-         "Bronze e Silver finalizados. Iniciando camada Gold..."   
-        date
-        """
+    echo "Bronze e Silver finalizados. Iniciando camada Gold..."
+    date
+    """
     )
 
     gold_job = spark_task(
-        "Gold_Layer",
+        "gold_Layer",
         GOLD_SCRIPT)
-
 
     # Dependências principais da DAG
     wait_vocation >> vocation_group
