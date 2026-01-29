@@ -5,20 +5,23 @@ x-common-log-config: &default_config
     - .credentials.conf
 
 services:
-  dremio:
-    image: dremio/dremio-oss:25.1
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
     ports:
-      - 9047:9047
-      # - 31010:31010
-      # - 32010:32010
-    container_name: dremio
+      - "8085:8085"
     volumes:
-      - dremio_warehouse_vol:/opt/dremio/data
+      - ../docker/trino/etc:/etc/trino
     <<: *default_config
 
-
-volumes:
-  dremio_warehouse_vol:
+  streamlit:
+    build:
+      context: ../docker/streamlit
+      dockerfile: Dockerfile
+    container_name: streamlit
+    ports:
+      - "8501:8501"
+    <<: *default_config
 
 networks:
   lakehouse_network:

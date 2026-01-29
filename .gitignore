@@ -216,3 +216,8 @@ texto.txt
 # lakehouse data
 mnt/minio/lakehouse/bronze/skills_e25e1c12-0f35-482e-b8ad-1e724ea368c0/data/  
 mnt/minio/lakehouse/bronze/vocation_8de76cce-f9cb-435b-a74b-e667309b91f6/data/
+
+mnt/minio/lakehouse/silver/skills_9d025f57-b2c7-4deb-bdc6-3daa49d46e00/data/
+mnt/minio/lakehouse/silver/vocation_a5a6c13a-aff7-435e-93d0-c3f77d5ba467/data/
+
+mnt/notebooks/.Trash-0
