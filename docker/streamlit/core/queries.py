@@ -20,3 +20,38 @@ def experience_global_rank():
     """
 
     return con.execute(query).df()
+
+def skills_global_rank():
+    con = get_duckdb_connection()
+
+    query = f"""
+        SELECT
+            name
+            , world
+            , skill_name
+            , vocation
+            , skill_level
+            , updated_at
+        FROM read_parquet(
+            's3://{LAKEHOUSE["bucket"]}/{LAKEHOUSE["gold_path"]}/skills_rank_global_15cd9380-9d65-4dc0-8313-0caa64ab6e24/data/*'
+        )
+    """
+    
+    return con.execute(query).df()
+
+def world_summary():
+    con = get_duckdb_connection()
+
+    query = f"""
+        SELECT
+	        world
+            , world_type
+            , vocation
+            , players_count
+            , updated_at
+        FROM read_parquet(
+            's3://{LAKEHOUSE["bucket"]}/{LAKEHOUSE["gold_path"]}/world_summary_f0651177-c57d-432d-bf9b-44db00a3e865/data/*'
+        )
+    """
+
+    return con.execute(query).df()
