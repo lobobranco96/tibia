@@ -19,6 +19,8 @@ services:
       context: ../docker/streamlit
       dockerfile: Dockerfile
     container_name: streamlit
+    volumes:
+      - ../docker/streamlit:/app
     ports:
       - "8501:8501"
     <<: *default_config
