@@ -1,11 +1,10 @@
 import duckdb
-from core.config import MINIO_CONFIG, DUCKDB
+from .config import MINIO_CONFIG, DUCKDB
 
 def get_duckdb_connection():
     con = duckdb.connect(DUCKDB["database"])
 
     # extensões
-    con.execute("INSTALL httpfs;")
     con.execute("LOAD httpfs;")
 
     # MinIO (S3 compatível)

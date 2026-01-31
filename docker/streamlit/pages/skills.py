@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+from core.queries import skills_global_rank
 
 st.set_page_config(
     page_title="Tibia - Ranking Global de Skills",
@@ -10,8 +11,7 @@ st.title("🛡️ Tibia - Ranking Global de Skills")
 
 @st.cache_data
 def carregar_dados():
-    df = pd.read_csv("..\docs\csv_data\gold_skills_rank_global.csv")
-    df = df.drop(df.columns[0], axis=1)
+    df = skills_global_rank()
     df["updated_at"] = pd.to_datetime(df["updated_at"])
     # cria rank por category (skill)
     df["rank"] = (
@@ -61,12 +61,17 @@ df_filtrado = (
 # ======================
 # MÉTRICAS
 # ======================
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
-col1.metric("Jogadores", len(df_filtrado))
-col2.metric("Skill Máxima", int(df_filtrado["skill_level"].max()))
-col3.metric("Mundos", df_filtrado["world"].nunique())
-col4.metric("Última Atualização", df_filtrado["updated_at"].max().strftime("%Y-%m-%d"))
+if df_filtrado.empty:
+    st.warning("Nenhum dado encontrado para os filtros selecionados.")
+    st.stop()
+
+col1.metric("👥 Jogadores", len(df_filtrado))
+col2.metric("📈 Skill Máxima", int(df_filtrado["skill_level"].max()))
+col3.metric("📉 Skill Mínimo", int(df_filtrado["skill_level"].min()))
+col4.metric("🌍 Mundos", df_filtrado["world"].nunique())
+col5.metric(" Última Atualização", df_filtrado["updated_at"].max().strftime("%Y-%m-%d"))
 
 st.markdown("---")
 

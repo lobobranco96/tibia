@@ -33,7 +33,7 @@ st.markdown(
 Este projeto é um **dashboard analítico** construído com **Streamlit**  
 para explorar dados do **Tibia** utilizando uma arquitetura moderna:
 
-- 🧊 **Lakehouse (Bronze / Silver / Gold)**
+- 🧊 **Source: Gold lakehouse layer**
 - 🧊 **Apache Iceberg**
 - 🦆 **DuckDB**
 - ☁️ **MinIO (S3 compatível)**

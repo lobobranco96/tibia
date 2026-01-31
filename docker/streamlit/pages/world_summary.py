@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+from core.queries import world_summary
 
 st.set_page_config(
     page_title="Tibia - Players por World",
@@ -10,8 +11,7 @@ st.title("🌍 Tibia - Players por World e Vocation")
 
 @st.cache_data
 def carregar_dados():
-    df = pd.read_csv("..\docs\csv_data\gold_world_summary.csv")
-    df = df.drop(df.columns[0], axis=1)
+    df = world_summary()
     df["updated_at"] = pd.to_datetime(df["updated_at"])
     return df
 
@@ -53,9 +53,7 @@ df_filtrado = df[
     (df["vocation"].isin(vocation))
 ]
 
-# ======================
 # AGREGAÇÕES
-# ======================
 total_players = int(df_filtrado["players_count"].sum())
 
 players_por_world = (
@@ -72,9 +70,7 @@ players_por_vocation = (
     .sort_values("players_count", ascending=False)
 )
 
-# ======================
 # MÉTRICAS
-# ======================
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("Players Totais", total_players)
@@ -87,9 +83,8 @@ col4.metric(
 
 st.markdown("---")
 
-# ======================
 # TABELAS
-# ======================
+
 st.subheader("📋 Players por World")
 st.dataframe(
     players_por_world,
