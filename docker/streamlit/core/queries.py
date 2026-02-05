@@ -5,7 +5,7 @@ def experience_global_rank():
     con = get_duckdb_connection()
 
     query = f"""
-        SELECT
+    SELECT
             rank,
             name,
             world,
@@ -13,7 +13,8 @@ def experience_global_rank():
             level,
             experience,
             world_type,
-            updated_at
+            updated_at,
+            snapshot_date
         FROM read_parquet(
             's3://{LAKEHOUSE["bucket"]}/{LAKEHOUSE["gold_path"]}/experience_rank_global_7e91a343-db2b-45f1-b507-d047fd991d1d/data/*'
         )

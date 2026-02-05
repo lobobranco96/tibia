@@ -46,7 +46,7 @@ Use o menu lateral para navegar entre os rankings.
 # =========================
 # CARDS DE NAVEGAÇÃO
 # =========================
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     st.metric("🏆 Experience", "Ranking Global")
@@ -59,6 +59,14 @@ with col2:
 with col3:
     st.metric("🌍 Worlds", "Resumo")
     st.markdown("Distribuição de players por mundo")
+
+with col4:
+    st.metric("🌍 Experience", "Estatistica")
+    st.markdown("Progressão de experience de jogadores")
+
+with col5:
+    st.metric("🌍 Skills", "Estatistica")
+    st.markdown("Progressão de Skills de jogadores por categoria")
 
 st.markdown("---")
 
