@@ -24,6 +24,8 @@ if __name__ == "__main__":
         gold.experience_rank_atualizado()
         gold.skills_rank_atualizado()
         gold.world_summary()
+        gold.experience_progression()
+        gold.skills_progression()
 
         logging.info("Job Gold executado com sucesso.")
 

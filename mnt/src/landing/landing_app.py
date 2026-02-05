@@ -91,7 +91,7 @@ def extract_category(category: str) -> str:
     try:
         # Categorias válidas
         valid_extra = [
-            "achievements", "fishing", "loyalty", "drome", "boss", "charm", "goshnair"
+            "achievements", "loyalty", "drome", "boss", "charm", "goshnair"
         ]
 
         valid_skills = [

@@ -8,7 +8,8 @@ S3_ENDPOINT = os.getenv("S3_ENDPOINT")
 NESSIE_URI = os.getenv("NESSIE_URI")
 
 
-def create_spark_session(appname):
+def create_spark_session(appname: str):
+
     master = "spark://spark-master:7077"
 
     conf = (
@@ -16,29 +17,30 @@ def create_spark_session(appname):
         .setAppName(appname)
         .set("spark.master", master)
 
-        # EXTENSÕES ICEBERG + NESSIE
+        # ============================================================
+        # EXTENSÕES ICEBERG
+        # ============================================================
         .set(
             "spark.sql.extensions",
             "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
         )
-        
-        # 🔥 MEMÓRIA (ESSENCIAL PARA ICEBERG)
+        # ============================================================
+        # PERFORMANCE BÁSICA
+        # ============================================================
         .set("spark.executor.instances", "1")
         .set("spark.executor.cores", "1")
         .set("spark.executor.memory", "2g")
         .set("spark.executor.memoryOverhead", "512m")
         .set("spark.driver.memory", "2g")
-        
+
         .set("spark.sql.shuffle.partitions", "8")
         .set("spark.default.parallelism", "8")
-        .set("spark.sql.iceberg.write.distribution-mode", "none")
-        .set("spark.sql.iceberg.write.fanout.enabled", "false")
-        .set("spark.sql.iceberg.write.distribution-mode", "none")
 
-        # REGISTRO DO CATÁLOGO NESSIE
+        # ============================================================
+        # CATÁLOGO NESSIE
+        # ============================================================
         .set("spark.sql.catalog.nessie", "org.apache.iceberg.spark.SparkCatalog")
         .set("spark.sql.catalog.nessie.type", "nessie")
-        .set("spark.sql.catalog.nessie.io-impl", "org.apache.iceberg.aws.s3.S3FileIO")
         .set("spark.sql.catalog.nessie.uri", NESSIE_URI)
         .set("spark.sql.catalog.nessie.ref", "main")
         .set("spark.sql.catalog.nessie.authentication.type", "NONE")
@@ -46,25 +48,25 @@ def create_spark_session(appname):
         .set("spark.sql.catalog.nessie.warehouse", "s3a://lakehouse/")
         .set("spark.sql.catalog.nessie.client-api-version", "2")
 
-        # CONFIG S3 -> ICEBERG
-        .set("spark.sql.catalog.nessie.s3.path-style-access", "true")
-        .set("spark.sql.catalog.nessie.s3.endpoint", S3_ENDPOINT)
-
-        # CONFIG HADOOP S3A
+        # ============================================================
+        # S3A -> MINIO
+        # ============================================================
+        .set("spark.hadoop.fs.defaultFS", "s3a://lakehouse")
+        .set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        .set("spark.hadoop.fs.s3a.endpoint", S3_ENDPOINT)
         .set("spark.hadoop.fs.s3a.access.key", AWS_ACCESS_KEY)
         .set("spark.hadoop.fs.s3a.secret.key", AWS_SECRET_KEY)
-        .set("spark.hadoop.fs.s3a.endpoint", S3_ENDPOINT)
         .set("spark.hadoop.fs.s3a.path.style.access", "true")
-        .set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
         .set(
-                "spark.hadoop.fs.s3a.aws.credentials.provider",
-                "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
-            )
-        .set("spark.hadoop.fs.defaultFS", "s3a://lakehouse")
+            "spark.hadoop.fs.s3a.aws.credentials.provider",
+            "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+        )
+        # ============================================================
+        # ICEBERG WRITE SETTINGS
+        # ============================================================
+        .set("spark.sql.iceberg.write.distribution-mode", "none")
+        .set("spark.sql.iceberg.write.fanout.enabled", "false")
     )
 
     spark = SparkSession.builder.config(conf=conf).getOrCreate()
     return spark
-
-
-
