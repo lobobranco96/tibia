@@ -221,3 +221,5 @@ mnt/minio/lakehouse/silver/skills_9d025f57-b2c7-4deb-bdc6-3daa49d46e00/data/
 mnt/minio/lakehouse/silver/vocation_a5a6c13a-aff7-435e-93d0-c3f77d5ba467/data/
 
 mnt/notebooks/.Trash-0
+
+docker/trino/data
