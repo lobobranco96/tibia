@@ -6,12 +6,13 @@ x-common-log-config: &default_config
 
 services:
   trino:
-    image: trinodb/trino:latest
+    image: trinodb/trino:449
     container_name: trino
     ports:
-      - "8085:8085"
+      - "8085:8080"
     volumes:
       - ../docker/trino/etc:/etc/trino
+      - ../docker/trino/data:/var/trino/data
     <<: *default_config
 
   streamlit:
