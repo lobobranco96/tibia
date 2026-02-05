@@ -5,6 +5,7 @@ up:
 	docker compose -f services/lakehouse.yaml up -d
 	docker compose -f services/orchestration.yaml up -d
 	docker compose -f services/processing.yaml up -d
+	docker compose -f services/visualization.yaml up -d
 
 down:
 	docker compose -f services/lakehouse.yaml down
