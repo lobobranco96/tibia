@@ -47,7 +47,7 @@ x-airflow-common:
     postgres:
       condition: service_healthy
   networks:
-    - lakehouse_network  
+    - lakehouse
 
 services:
   postgres:
@@ -65,7 +65,7 @@ services:
       start_period: 5s
     restart: always
     networks:
-      - lakehouse_network  
+      - lakehouse
 
   airflow-apiserver:
     <<: *airflow-common
@@ -240,5 +240,5 @@ volumes:
   postgres-db-volume:
 
 networks:
-  lakehouse_network:
-    driver: bridge
+  lakehouse:
+    external: true

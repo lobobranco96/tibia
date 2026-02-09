@@ -1,6 +1,6 @@
 x-common-log-config: &default_config
   networks:
-    - lakehouse_network
+    - lakehouse
   env_file:
     - .credentials.conf
 
@@ -92,7 +92,7 @@ services:
     ports:
       - "19120:19120"
     networks:
-      - lakehouse_network
+      - lakehouse
 
   notebook:
     image: spark-custom:3.5.3
@@ -115,5 +115,5 @@ volumes:
   lakehouse_pg_nessie_vol:
 
 networks:
-  lakehouse_network:
-    driver: bridge
+  lakehouse:
+    external: true
