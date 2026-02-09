@@ -154,24 +154,69 @@ Controla mudanças em:
 Mantém apenas um registro atual por (name, world, category).
 Estrutura de versionamento idêntica à tabela vocation.
 
-### Tabela: extra
-
-Responsável por dados complementares (achievements, drome score, fishing, etc).
-Chave de negócio:
-  - (name, world, category, title)
-
-Campos versionados:
-  - points
-  - level
-  - vocation
-
-Suporta títulos nulos com comparação segura (<=>).
-Preserva o arquivo de origem (source_file) para rastreabilidade.
-Ideal para domínios com schemas mais flexíveis.
-
 ---
 
 ## Camada Gold
+Local: src/jobs/gold_job.py
+
+A camada Gold é responsável por gerar tabelas analíticas finais, prontas para consumo em dashboards e análises, agregando dados versionados da camada Silver e aplicando cálculos de rankings e progressões.
+
+As tabelas Gold são criadas como tabelas Iceberg no catálogo nessie.gold e suportam histórico com snapshots de data (snapshot_date) e timestamps de atualização (updated_at).
+
+Jobs principais
+O objeto Gold contém métodos para atualizar as tabelas Gold:
+
+#### 1. experience_global_rank()
+
+Gera o ranking global de experiência de jogadores.
+Fonte: nessie.silver.vocation (apenas registros is_current = true)
+Campos gerados:
+  - rank: número do ranking global, ordenado por level DESC, experience DESC, name ASC.
+  - name, world, vocation, level, experience, world_type
+  - updated_at: timestamp da execução
+Particionamento: por snapshot_date = DATE(current_timestamp())
+
+#### 2. skills_global_rank()
+
+Gera o ranking global de skills, particionado por categoria.
+Fonte: nessie.silver.skills (apenas registros is_current = true)
+Campos gerados:
+  - rank: ranking dentro de cada categoria (PARTITION BY category)
+  - name, world, category AS skill_name, vocation, skill_level
+  - updated_at: timestamp da execução
+
+#### 3. world_summary()
+
+Cria um resumo da quantidade de jogadores por mundo e vocação.
+Fonte: nessie.silver.vocation (apenas registros is_current = true)
+Campos gerados:
+  - world, world_type, vocation
+  - players_count: quantidade de jogadores distintos
+  - updated_at: timestamp da execução
+
+#### 4. experience_progression()
+
+Cria a tabela de evolução de level e experiência por jogador, com métricas de progresso.
+Fonte: nessie.silver.vocation
+Campos gerados:
+  - name, world, vocation, world_type
+  - previous_level, current_level, level_gain
+  - previous_experience, current_experience, experience_gain
+  - previous_start_date, current_start_date
+  - days_between_updates, avg_xp_per_day
+  - is_current, updated_at
+
+#### 5. skills_progression()
+
+Cria a tabela de progressão de skills por jogador, com métricas de ganho por período.
+Fonte: nessie.silver.skills
+Campos gerados:
+  - name, world, vocation, category
+  - skill_before, skill_after, skill_gain
+  - from_date, to_date
+  - days_between_updates, avg_skill_per_day
+  - is_current, updated_at
+
 
 ---
 
@@ -186,3 +231,10 @@ Os testes validam a lógica de extração, transformação e integridade dos dad
 - `test_vocation.py`: testa as funções relacionadas a vocações.
 
 ---
+
+## Observações
+
+  - Todas as tabelas usam Apache Iceberg para versionamento e particionamento.
+  - Nessie garante controle de versões e snapshots.
+  - MinIO atua como armazenamento S3-compatible, integrado com Spark.
+  - Logging detalhado e auditoria garantem rastreabilidade e consistência.
