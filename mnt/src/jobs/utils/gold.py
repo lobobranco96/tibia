@@ -6,15 +6,14 @@ class Gold:
     def __init__(self, spark):
         self.spark = spark
 
-    def experience_rank_atualizado(self):
+    def experience_global_rank(self):
 
         logging.info("Atualizando ranking global de experiencia.")
 
         return self.spark.sql("""
-            INSERT INTO nessie.gold.experience_rank_global
+            INSERT INTO nessie.gold.experience_global_rank
             SELECT
                 ROW_NUMBER() OVER (
-                    PARTITION BY DATE(current_timestamp())
                     ORDER BY level DESC, experience DESC, name ASC
                 ) AS rank,
                 name,
@@ -26,27 +25,31 @@ class Gold:
                 current_timestamp() AS updated_at,
                 DATE(current_timestamp()) AS snapshot_date
             FROM nessie.silver.vocation
-            WHERE is_current = true;
+            WHERE is_current = true
         """)
 
 
-    def skills_rank_atualizado(self):
+    def skills_global_rank(self):
 
         logging.info("Atualizando ranking global de skills.")
 
         return self.spark.sql("""
-            CREATE OR REPLACE TABLE nessie.gold.skills_rank_global
-            USING iceberg
-            AS
+            INSERT OVERWRITE nessie.gold.skills_global_rank
+            PARTITION (snapshot_date)
             SELECT
-                  name
-                , world
-                , category AS skill_name
-                , vocation
-                , skill_level
-                , current_timestamp() AS updated_at
-        FROM nessie.silver.skills
-        WHERE is_current = true
+                ROW_NUMBER() OVER (
+                    PARTITION BY category
+                    ORDER BY skill_level DESC, name ASC
+                ) AS rank,
+                name,
+                world,
+                category AS skill_name,
+                vocation,
+                skill_level,
+                current_timestamp() AS updated_at,
+                DATE(current_timestamp()) AS snapshot_date
+            FROM nessie.silver.skills
+            WHERE is_current = true
         """)
 
     def world_summary(self):
