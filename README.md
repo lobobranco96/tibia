@@ -73,13 +73,13 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
                         |
                         v
               +---------+---------+
-              |   Dremio Engine   |
+              |   Trino Engine   |
               |   SQL sobre Lake  |
               +---------+---------+
                         |
                         v
     +------------------------------------+
-    | Streamlit Dashboards / Grafana     |
+    | Streamlit Dashboards               |
     | Visualização e Monitoramento       |
     +------------------------------------+
 ```
@@ -151,7 +151,7 @@ A camada Silver garante rastreabilidade, histórico completo e consistência dos
   - EM CONSTRUCAO
 
 ### 5. Consulta e Visualização:
-  - Dremio permite consultas SQL sobre as tabelas Iceberg versionadas.
+  - Trino permite consultas SQL sobre as tabelas Iceberg versionadas.
   - Streamlit dashboards exibem rankings, skills e evolução histórica.
   - Prometheus + Grafana monitoram performance e saúde do pipeline.
     
@@ -344,7 +344,12 @@ make build
  Esse comando:
   - Builda todas as imagens definidas em docker/
 
-2. Subida dos Containers
+2. Criar a rede para o container
+```bash
+docker network create lakehouse
+```
+
+3. Subida dos Containers
 ```bash
 make up
 ```
@@ -371,8 +376,10 @@ Após a inicialização do ambiente, os seguintes serviços ficam acessíveis lo
 | **MinIO (Console Web)** | http://localhost:9000 | Data Lake (Landing, Bronze, Silver, Gold) |
 | **Nessie Catalog** | http://localhost:19120 | Catálogo e versionamento de tabelas Iceberg |
 | **Apache Spark Cluster** | http://localhost:9090 | Monitoramento do cluster Spark |
-| **Prometheus** | http://localhost:9091 *(se configurado)* | Coleta de métricas |
-| **Grafana** | http://localhost:3000 *(se configurado)* | Dashboards de observabilidade |
+| **Trino Query Engine** | http://localhost:8085 | Motor de consulta SQL sobre tabelas iceberg |
+| **Streamlit** | http://localhost:8081 | Aplicativo para visualizar os dados |
+| **Prometheus** | http://localhost:9091 | Coleta de métricas |
+| **Grafana** | http://localhost:3000 | Dashboards de observabilidade |
 
 
 ## Considerações Finais
