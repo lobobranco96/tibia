@@ -220,6 +220,13 @@ mnt/minio/lakehouse/bronze/vocation_8de76cce-f9cb-435b-a74b-e667309b91f6/data/
 mnt/minio/lakehouse/silver/skills_9d025f57-b2c7-4deb-bdc6-3daa49d46e00/data/
 mnt/minio/lakehouse/silver/vocation_a5a6c13a-aff7-435e-93d0-c3f77d5ba467/data/
 
+mnt/minio/lakehouse/gold/experience_global_rank_08d3196e-054e-4057-9c03-f32cb853a96a/data/
+mnt/minio/lakehouse/gold/experience_progression_b17d8623-f81e-488f-a042-873d5d28dd84/data/
+mnt/minio/lakehouse/gold/skills_global_rank_736e255a-8d6d-4cad-a05d-871845cea70a/data/
+mnt/minio/lakehouse/gold/skills_progression_89cbebdb-2c34-4ca4-a6be-c6e58e91a0cc/data/
+mnt/minio/lakehouse/gold/world_summary_f0651177-c57d-432d-bf9b-44db00a3e865/data/
+
+
 mnt/notebooks/.Trash-0
 
 docker/trino/data
