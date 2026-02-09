@@ -1,6 +1,6 @@
 x-common-log-config: &default_config
   networks:
-    - lakehouse_network
+    - lakehouse
   env_file:
     - .credentials.conf
 
@@ -27,5 +27,5 @@ services:
     <<: *default_config
 
 networks:
-  lakehouse_network:
-    driver: bridge
+  lakehouse:
+    external: true
