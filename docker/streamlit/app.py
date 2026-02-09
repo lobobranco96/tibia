@@ -1,17 +1,13 @@
 import streamlit as st
 
-# =========================
 # CONFIGURAÇÃO DA PÁGINA
-# =========================
 st.set_page_config(
     page_title="Tibia Analytics",
     page_icon="⚔️",
     layout="wide"
 )
 
-# =========================
 # SIDEBAR GLOBAL
-# =========================
 st.sidebar.title("⚙️ Controle")
 
 if st.sidebar.button("🔄 Refresh dados"):
@@ -20,11 +16,9 @@ if st.sidebar.button("🔄 Refresh dados"):
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("📊 **Tibia Analytics**")
-st.sidebar.markdown("Lakehouse • Iceberg • DuckDB")
+st.sidebar.markdown("Lakehouse • Iceberg • Trino")
 
-# =========================
 # CONTEÚDO PRINCIPAL
-# =========================
 st.title("⚔️ Tibia Analytics")
 st.subheader("Lakehouse & Rankings Dashboard")
 
@@ -35,7 +29,7 @@ para explorar dados do **Tibia** utilizando uma arquitetura moderna:
 
 - 🧊 **Source: Gold lakehouse layer**
 - 🧊 **Apache Iceberg**
-- 🦆 **DuckDB**
+- 🦆 **Trino**
 - ☁️ **MinIO (S3 compatível)**
 - 📊 **Dashboards interativos**
 
@@ -43,9 +37,8 @@ Use o menu lateral para navegar entre os rankings.
 """
 )
 
-# =========================
-# CARDS DE NAVEGAÇÃO
-# =========================
+
+# NAVEGAÇÃO
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
@@ -70,9 +63,7 @@ with col5:
 
 st.markdown("---")
 
-# =========================
 # FOOTER
-# =========================
 st.caption(
-    "Projeto educacional • Engenharia de Dados • Streamlit + DuckDB"
+    "Projeto de dados Criado por Renato Mariano • Engenharia de Dados"
 )

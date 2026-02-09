@@ -9,17 +9,8 @@ RUN pip install --no-cache-dir \
     streamlit \
     trino \
     pandas \
-    duckdb \
-    pyarrow \
-    boto3 \
-    s3fs
-
-# 🔥 instala a extensão httpfs do DuckDB
-RUN python - << 'EOF'
-import duckdb
-con = duckdb.connect()
-con.execute("INSTALL httpfs;")
-EOF
+    sqlalchemy \
+    plotly
 
 COPY . .
 

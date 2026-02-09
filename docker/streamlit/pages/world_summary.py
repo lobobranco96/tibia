@@ -2,25 +2,35 @@ import pandas as pd
 import streamlit as st
 from core.queries import world_summary
 
+# ===============================
+# CONFIGURATION
+# ===============================
 st.set_page_config(
-    page_title="Tibia - Players por World",
+    page_title="Tibia - Players by World",
     layout="wide"
 )
 
-st.title("🌍 Tibia - Players por World e Vocation")
+st.title("🌍 Tibia - Player Distribution by Vocation and World")
 
-@st.cache_data
-def carregar_dados():
+# ===============================
+# LOAD DATA
+# ===============================
+@st.cache_data(show_spinner="Loading world summary...")
+def load_data():
     df = world_summary()
     df["updated_at"] = pd.to_datetime(df["updated_at"])
+    # Normalize text
+    df["world"] = df["world"].str.title()
+    df["vocation"] = df["vocation"].str.title()
+    df["world_type"] = df["world_type"].str.title()
     return df
 
-df = carregar_dados()
+df = load_data()
 
-# ======================
-# SIDEBAR - FILTROS
-# ======================
-st.sidebar.header("🎛️ Filtros")
+# ===============================
+# SIDEBAR FILTERS
+# ===============================
+st.sidebar.header("🎛️ Filters")
 
 # World Type
 world_type = st.sidebar.multiselect(
@@ -31,79 +41,85 @@ world_type = st.sidebar.multiselect(
 
 # World
 worlds = sorted(df["world"].unique())
-world = st.sidebar.multiselect(
+world_selected = st.sidebar.multiselect(
     "World",
     options=worlds,
     default=worlds
 )
 
 # Vocation
-vocation = st.sidebar.multiselect(
+vocations = sorted(df["vocation"].unique())
+vocation_selected = st.sidebar.multiselect(
     "Vocation",
-    options=sorted(df["vocation"].unique()),
-    default=sorted(df["vocation"].unique())
+    options=vocations,
+    default=vocations
 )
 
-# ======================
-# APLICA FILTROS
-# ======================
-df_filtrado = df[
+# ===============================
+# APPLY FILTERS
+# ===============================
+df_filtered = df[
     (df["world_type"].isin(world_type)) &
-    (df["world"].isin(world)) &
-    (df["vocation"].isin(vocation))
+    (df["world"].isin(world_selected)) &
+    (df["vocation"].isin(vocation_selected))
 ]
 
-# AGREGAÇÕES
-total_players = int(df_filtrado["players_count"].sum())
+# ===============================
+# AGGREGATIONS
+# ===============================
+total_players = int(df_filtered["players_count"].sum())
 
-players_por_world = (
-    df_filtrado
-    .groupby("world", as_index=False)["players_count"]
+players_by_world = (
+    df_filtered.groupby("world", as_index=False)["players_count"]
     .sum()
     .sort_values("players_count", ascending=False)
 )
 
-players_por_vocation = (
-    df_filtrado
-    .groupby("vocation", as_index=False)["players_count"]
+players_by_vocation = (
+    df_filtered.groupby("vocation", as_index=False)["players_count"]
     .sum()
     .sort_values("players_count", ascending=False)
 )
 
-# MÉTRICAS
+# ===============================
+# METRICS
+# ===============================
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Players Totais", total_players)
-col2.metric("Worlds", players_por_world["world"].nunique())
-col3.metric("Vocations", players_por_vocation["vocation"].nunique())
+col1.metric("Total Players", total_players)
+col2.metric("Worlds", players_by_world["world"].nunique())
+col3.metric("Vocations", players_by_vocation["vocation"].nunique())
 col4.metric(
-    "Última Atualização",
-    df_filtrado["updated_at"].max().strftime("%Y-%m-%d")
+    "Last Update",
+    df_filtered["updated_at"].max().strftime("%Y-%m-%d %H:%M:%S")
 )
 
 st.markdown("---")
 
-# TABELAS
-
-st.subheader("📋 Players por World")
+# ===============================
+# TABLES
+# ===============================
+st.subheader("📋 Players by World")
 st.dataframe(
-    players_por_world,
+    players_by_world,
     use_container_width=True,
     hide_index=True
 )
 
-st.subheader("📋 Players por Vocation")
+st.subheader("📋 Players by Vocation")
 st.dataframe(
-    players_por_vocation,
+    players_by_vocation,
     use_container_width=True,
     hide_index=True
 )
 
 st.markdown("---")
 
-st.subheader("📋 Dados Detalhados")
+st.subheader("📋 Detailed Data")
+
+df_filtered["updated_at"] = df_filtered["updated_at"].dt.strftime("%Y-%m-%d %H:%M:%S")
 st.dataframe(
-    df_filtrado.sort_values("players_count", ascending=False),
+    df_filtered.sort_values("players_count", ascending=False),
     use_container_width=True,
     hide_index=True
 )

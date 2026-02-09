@@ -1,214 +1,160 @@
-import streamlit as st
 import pandas as pd
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
+import streamlit as st
 import plotly.express as px
+from core.queries import skill_progression
 
 # ===============================
-# CONFIG STREAMLIT
+# STREAMLIT CONFIG
 # ===============================
 st.set_page_config(
-    page_title="Tibia - Player Progression",
+    page_title="Tibia - Player Skill Progression",
     layout="wide"
 )
 
-st.title("📈 Tibia – Evolução de Skills por Player")
+st.title("📈 Tibia – Player Skill Progression")
 
 # ===============================
-# SPARK SESSION
+# LOAD DATA
 # ===============================
+@st.cache_data(show_spinner="Loading skill progression...")
+def load_progression():
+    df = skill_progression()
+    df["from_date"] = pd.to_datetime(df["from_date"])
+    df["to_date"] = pd.to_datetime(df["to_date"])
+    return df
 
-# ===============================
-# SPARK SESSION
-# ===============================
-@st.cache_resource
-def create_spark():
-    return SparkSession.builder.appName("tibia-lakehouse").getOrCreate()
-
-spark = create_spark()
-
-def load_data():
-    df = (
-        spark.read
-        .format("csv")
-        .option("header", "true")
-        .load("/content/drive/MyDrive/projetos/tibia/docs/csv_data/silver_skills.csv")
-    )
-    df.createOrReplaceTempView("silver_skills")
-
-@st.cache_data
-def load_gold_dataframe():
-    spark_df = spark.sql(query)
-    return spark_df.toPandas()
-
+df = load_progression()
 
 # ===============================
-# QUERY
+# SIDEBAR - FILTERS
 # ===============================
-query = """
-WITH ordered_progression AS (
-    SELECT
-        name,
-        world,
-        vocation,
-        category,
+st.sidebar.header("🔎 Filters")
 
-        CAST(skill_level AS INT) AS skill_level,
-        start_date,
-        is_current,
-
-        LAG(CAST(skill_level AS INT)) OVER (
-            PARTITION BY name, category
-            ORDER BY start_date
-        ) AS previous_skill_level,
-
-        LAG(start_date) OVER (
-            PARTITION BY name, category
-            ORDER BY start_date
-        ) AS previous_start_date
-
-    FROM silver_skills
-)
-
-SELECT
-    name,
-    world,
-    vocation,
-    category,
-
-    previous_skill_level      AS skill_before,
-    skill_level               AS skill_after,
-    (skill_level - previous_skill_level) AS skill_gain,
-
-    previous_start_date       AS from_date,
-    start_date                AS to_date,
-
-    DATEDIFF(
-        CAST(start_date AS DATE),
-        CAST(previous_start_date AS DATE)
-    ) AS days_between_updates,
-
-    ROUND(
-        (skill_level - previous_skill_level) /
-        NULLIF(
-            DATEDIFF(
-                CAST(start_date AS DATE),
-                CAST(previous_start_date AS DATE)
-            ),
-            0
-        ),
-        2
-    ) AS avg_skill_per_day,
-
-    is_current
-
-FROM ordered_progression
-WHERE previous_skill_level IS NOT NULL
-ORDER BY name, category, to_date
-"""
-
-load_data()
-df = load_gold_dataframe()
-
-# ===============================
-# SIDEBAR FILTERS
-# ===============================
-st.sidebar.header("🔎 Filtros")
-
+# World
 world = st.sidebar.selectbox(
     "World",
-    ["Todos"] + sorted(df["world"].dropna().unique())
+    ["All"] + sorted(df["world"].dropna().unique()),
+    key="world_select_skills"
 )
 
-vocation = st.sidebar.selectbox(
+# Vocation
+vocations = sorted(df["vocation"].dropna().unique())
+vocation_display = ["All"] + [v.title() for v in vocations]
+vocation_selected = st.sidebar.selectbox(
     "Vocation",
-    ["Todas"] + sorted(df["vocation"].dropna().unique())
+    vocation_display,
+    key="vocation_select_skills"
 )
 
-category = st.sidebar.selectbox(
-    "Categoria",
-    ["Todas"] + sorted(df["category"].dropna().unique())
+# Category
+categories = sorted(df["category"].dropna().unique())
+category_selected = st.sidebar.selectbox(
+    "Category",
+    ["All"] + categories,
+    key="category_select_skills"
 )
 
+# Player search
+player_search = st.sidebar.text_input(
+    "🔍 Search Player",
+    value="",
+    key="player_search_skills"
+).strip().lower()
+
+# ===============================
+# FILTER DATA
+# ===============================
 filtered_df = df.copy()
 
-if world != "Todos":
+if world != "All":
     filtered_df = filtered_df[filtered_df["world"] == world]
 
-if vocation != "Todas":
-    filtered_df = filtered_df[filtered_df["vocation"] == vocation]
+if vocation_selected != "All":
+    filtered_df = filtered_df[filtered_df["vocation"].str.lower() == vocation_selected.lower()]
 
-if category != "Todas":
-    filtered_df = filtered_df[filtered_df["category"] == category]
+if category_selected != "All":
+    filtered_df = filtered_df[filtered_df["category"] == category_selected]
 
+if player_search:
+    filtered_df = filtered_df[filtered_df["name"].str.lower().str.contains(player_search)]
+
+# Stop if no data
+if filtered_df.empty:
+    st.warning("No data found for the selected filters.")
+    st.stop()
+
+# ===============================
+# SELECT PLAYER
+# ===============================
 player = st.sidebar.selectbox(
     "Player",
-    sorted(filtered_df["name"].unique())
+    sorted(filtered_df["name"].unique()),
+    key="player_select_skills"
 )
 
-player_df = filtered_df[filtered_df["name"] == player]
+player_df = filtered_df[filtered_df["name"] == player].sort_values("to_date")
+
+if player_df.empty:
+    st.warning("No data found for the selected player.")
+    st.stop()
 
 # ===============================
 # KPIs
 # ===============================
 st.subheader(f"🎮 Player: {player}")
-player_info = player_df.iloc[0]
 
 info_col1, info_col2, info_col3 = st.columns(3)
+info_col1.info(f"🌍 World: {player_df['world'].iloc[-1].title()}")
+info_col2.info(f"🧙 Vocation: {player_df['vocation'].iloc[-1].title()}")
+info_col3.info(f"🛡️ Category: {player_df['category'].iloc[-1]}")
 
-info_col1.metric("🌍 World", player_info["world"])
-info_col2.metric("🧙 Vocation", player_info["vocation"])
-
-col1, col2, col3 = st.columns(3)
-
-col1.metric(
-    "Skill Atual",
-    int(player_df["skill_after"].max())
-)
-
-col2.metric(
-    "Skill Total Ganha",
-    int(player_df["skill_gain"].sum())
-)
-
-col3.metric(
-    "Média Skill / Dia",
-    round(player_df["avg_skill_per_day"].mean(), 2)
-)
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Current Skill", int(player_df["skill_after"].max()))
+col2.metric("Total Skill Gained", int(player_df["skill_gain"].sum()))
+col3.metric("Average Skill / Day", round(player_df["avg_skill_per_day"].mean(), 2))
+col4.metric("Days Monitored", int(player_df["days_between_updates"].sum()))
 
 # ===============================
-# TABLE
+# DATA TABLE
 # ===============================
-st.subheader("📊 Histórico de Evolução")
+st.subheader("📊 Progress History")
+
+player_df["skill_gain"] = player_df["skill_gain"].astype(float)
+player_df["avg_skill_per_day"] = player_df["avg_skill_per_day"].astype(float)
+
+cols = [
+    "category",
+    "skill_before",
+    "skill_after",
+    "skill_gain",
+    "days_between_updates",
+    "avg_skill_per_day",
+    "from_date",
+    "to_date"
+]
+player_df["from_date"] = player_df["from_date"].dt.strftime("%Y-%m-%d %H:%M:%S")
+player_df["to_date"] = player_df["to_date"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
 st.dataframe(
-    player_df[
-        [
-            "category",
-            "skill_before",
-            "skill_after",
-            "skill_gain",
-            "days_between_updates",
-            "avg_skill_per_day",
-            "from_date",
-            "to_date"
-        ]
-    ],
+    player_df[cols].style.format({
+        "skill_gain": "{:,.2f}",
+        "avg_skill_per_day": "{:,.2f}"
+    }),
     use_container_width=True
 )
 
 # ===============================
-# CHART
+# CHARTS
 # ===============================
-st.subheader("📈 Evolução ao Longo do Tempo")
+st.subheader("📈 Progress Over Time")
 
-fig = px.line(
+fig_skill = px.line(
     player_df,
     x="to_date",
     y="skill_after",
     color="category",
     markers=True,
-    title="Evolução de Skill por Data"
+    title="Skill Progression Over Time"
 )
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig_skill, use_container_width=True)

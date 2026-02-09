@@ -1,58 +1,144 @@
-from core.duckdb_session import get_duckdb_connection
-from core.config import LAKEHOUSE
+import pandas as pd
+from core.trino_session import get_trino_connection
 
-def experience_global_rank():
-    con = get_duckdb_connection()
+# EXPERIENCE GLOBAL RANK
+def experience_global_rank(snapshot_date=None):
+    conn = get_trino_connection()
 
-    query = f"""
-    SELECT
-            rank,
+    if snapshot_date:
+        snapshot_date = str(snapshot_date)[:10]
+
+        query = f"""
+            SELECT
+                rank,
+                name,
+                world,
+                vocation,
+                level,
+                experience,
+                world_type,
+                updated_at,
+                snapshot_date
+            FROM nessie.gold.experience_global_rank
+            WHERE snapshot_date = DATE '{snapshot_date}'
+            ORDER BY rank
+        """
+    else:
+        query = """
+            SELECT
+                rank,
+                name,
+                world,
+                vocation,
+                level,
+                experience,
+                world_type,
+                updated_at,
+                snapshot_date
+            FROM nessie.gold.experience_global_rank
+            ORDER BY snapshot_date DESC, rank
+        """
+
+    return pd.read_sql(query, conn)
+
+# SKILLS GLOBAL RANK
+def skills_global_rank(snapshot_date=None):
+    conn = get_trino_connection()
+
+    if snapshot_date:
+        query = f"""
+            SELECT
+                rank,
+                name,
+                world,
+                skill_name,
+                vocation,
+                skill_level,
+                updated_at,
+                snapshot_date
+            FROM nessie.gold.skills_global_rank
+            WHERE snapshot_date = DATE '{snapshot_date}'
+            ORDER BY skill_name, rank
+        """
+    else:
+        query = """
+            SELECT
+                rank,
+                name,
+                world,
+                skill_name,
+                vocation,
+                skill_level,
+                updated_at,
+                snapshot_date
+            FROM nessie.gold.skills_global_rank
+        """
+
+    return pd.read_sql(query, conn)
+
+
+# WORLD SUMMARY
+def world_summary():
+    conn = get_trino_connection()
+
+    query = """
+        SELECT
+            world,
+            world_type,
+            vocation,
+            players_count,
+            updated_at
+        FROM nessie.gold.world_summary
+    """
+
+    return pd.read_sql(query, conn)
+
+# PLAYER PROGRESSION
+def player_progression():
+    conn = get_trino_connection()
+
+    query = """
+        SELECT
             name,
             world,
             vocation,
-            level,
-            experience,
             world_type,
-            updated_at,
-            snapshot_date
-        FROM read_parquet(
-            's3://{LAKEHOUSE["bucket"]}/{LAKEHOUSE["gold_path"]}/experience_rank_global_7e91a343-db2b-45f1-b507-d047fd991d1d/data/*'
-        )
+            previous_level,
+            current_level,
+            level_gain,
+            previous_experience,
+            current_experience,
+            experience_gain,
+            previous_start_date,
+            current_start_date,
+            days_between_updates,
+            avg_xp_per_day,
+            is_current
+        FROM nessie.gold.experience_progression
     """
 
-    return con.execute(query).df()
+    return pd.read_sql(query, conn)
 
-def skills_global_rank():
-    con = get_duckdb_connection()
+# SKILL PROGRESSION
+def skill_progression():
+    conn = get_trino_connection()
 
-    query = f"""
+    query = """
         SELECT
-            name
-            , world
-            , skill_name
-            , vocation
-            , skill_level
-            , updated_at
-        FROM read_parquet(
-            's3://{LAKEHOUSE["bucket"]}/{LAKEHOUSE["gold_path"]}/skills_rank_global_15cd9380-9d65-4dc0-8313-0caa64ab6e24/data/*'
-        )
-    """
-    
-    return con.execute(query).df()
-
-def world_summary():
-    con = get_duckdb_connection()
-
-    query = f"""
-        SELECT
-	        world
-            , world_type
-            , vocation
-            , players_count
-            , updated_at
-        FROM read_parquet(
-            's3://{LAKEHOUSE["bucket"]}/{LAKEHOUSE["gold_path"]}/world_summary_f0651177-c57d-432d-bf9b-44db00a3e865/data/*'
-        )
+            name,
+            world,
+            vocation,
+            category,
+            skill_before,
+            skill_after,
+            skill_gain,
+            from_date,
+            to_date,
+            days_between_updates,
+            avg_skill_per_day,
+            is_current
+        FROM nessie.gold.skills_progression
     """
 
-    return con.execute(query).df()
+    return pd.read_sql(query, conn)
+

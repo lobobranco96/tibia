@@ -1,10 +1,11 @@
-import trino
+from trino.dbapi import connect
 
 def get_trino_connection():
-    return trino.dbapi.connect(
-        host="localhost",
+    conn = connect(
+        host="trino",
         port=8080,
         user="streamlit",
         catalog="iceberg",
         schema="gold"
     )
+    return conn

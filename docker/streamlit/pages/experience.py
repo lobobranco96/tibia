@@ -3,117 +3,134 @@ import streamlit as st
 from core.queries import experience_global_rank
 
 # ===============================
-# CONFIGURAÇÃO DA PÁGINA
+# STREAMLIT CONFIG
 # ===============================
 st.set_page_config(
-    page_title="Tibia - Ranking Global",
+    page_title="Tibia - Global Player Ranking",
     layout="wide"
 )
 
-st.title("🏆 Tibia - Ranking Global de Players")
+st.title("🏆 Tibia - Global Player Ranking")
 
 # ===============================
-# BOTÃO REFRESH (limpa cache)
+# REFRESH BUTTON
 # ===============================
-if st.sidebar.button("🔄 Refresh dados"):
+if st.sidebar.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
 # ===============================
-# CARGA DE DADOS
+# LOAD DATA
 # ===============================
-@st.cache_data(show_spinner="Carregando ranking global...")
-def carregar_dados():
+@st.cache_data(show_spinner="Loading global ranking...")
+def load_data():
     df = experience_global_rank()
 
-    # garante tipos corretos
     df["updated_at"] = pd.to_datetime(df["updated_at"])
     df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
+    df["rank"] = df["rank"].astype(int)
+
+    # normalize text
+    df["world"] = df["world"].str.title()
+    df["vocation"] = df["vocation"].str.title()
+    df["world_type"] = df["world_type"].str.title()
 
     return df
 
-df = carregar_dados()
+df = load_data()
 
 # ===============================
-# SIDEBAR - FILTRO DE DATA
+# SIDEBAR FILTERS
 # ===============================
-st.sidebar.header("🎛️ Filtros")
+st.sidebar.header("🎛️ Filters")
 
-datas_disponiveis = sorted(df["snapshot_date"].dt.normalize().unique(), reverse=True)
+# Snapshot Date
+available_dates = sorted(df["snapshot_date"].dt.normalize().unique(), reverse=True)
+if len(available_dates) == 0:
+    st.warning("No snapshots available yet.")
+    st.stop()
 
-data_selecionada = st.sidebar.selectbox(
-    "📅 Data do Ranking",
-    datas_disponiveis,
+selected_date = st.sidebar.selectbox(
+    "📅 Snapshot Date",
+    available_dates,
     format_func=lambda x: x.strftime("%Y-%m-%d")
 )
 
-# ===============================
-# OUTROS FILTROS
-# ===============================
+# World
+worlds = ["All"] + sorted(df["world"].unique().tolist())
+selected_world = st.sidebar.selectbox("World", worlds)
 
-# Filtro World
-worlds = ["Todos"] + sorted(df["world"].unique().tolist())
-world_selecionado = st.sidebar.selectbox("World", worlds)
-
-# Filtro World Type
+# World Type
 world_type = st.sidebar.multiselect(
     "World Type",
     options=sorted(df["world_type"].unique()),
     default=sorted(df["world_type"].unique())
 )
 
-# Filtro Vocation
+# Vocation
 vocation = st.sidebar.multiselect(
     "Vocation",
     options=sorted(df["vocation"].unique()),
     default=sorted(df["vocation"].unique())
 )
 
-# Filtro Top N
+# Top N
 top_n = st.sidebar.selectbox(
     "Top Ranking",
     options=[10, 50, 100, 500, 1000],
     index=2
 )
 
+# Player search
+player_search = st.sidebar.text_input("🔍 Search Player")
+
 # ===============================
-# APLICA FILTROS
+# APPLY FILTERS
 # ===============================
-df_filtrado = df[
-    (df["snapshot_date"].dt.normalize() == data_selecionada) &
+df_filtered = df[
+    (df["snapshot_date"].dt.normalize() == selected_date) &
     (df["rank"] <= top_n) &
     (df["world_type"].isin(world_type)) &
     (df["vocation"].isin(vocation))
 ]
 
-if world_selecionado != "Todos":
-    df_filtrado = df_filtrado[df_filtrado["world"] == world_selecionado]
+if selected_world != "All":
+    df_filtered = df_filtered[df_filtered["world"] == selected_world]
 
-# ===============================
-# MÉTRICAS
-# ===============================
-if df_filtrado.empty:
-    st.warning("Nenhum dado encontrado para os filtros selecionados.")
+if player_search:
+    df_filtered = df_filtered[df_filtered["name"].str.contains(player_search, case=False, na=False)]
+
+if df_filtered.empty:
+    st.warning("No data found for the selected filters.")
     st.stop()
 
+df_filtered = df_filtered.copy()
+df_filtered["experience"] = df_filtered["experience"].astype(float)
+
+# ===============================
+# KPIs
+# ===============================
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-col1.metric("👥 Jogadores", len(df_filtrado))
-col2.metric("📈 Level Máximo", int(df_filtrado["level"].max()))
-col3.metric("📉 Level Mínimo", int(df_filtrado["level"].min()))
-col4.metric("💠 Experiência Máxima", f"{df_filtrado['experience'].max():,}")
-col5.metric("🌍 Mundos", df_filtrado["world"].nunique())
-col6.metric("📅 Data do Ranking", data_selecionada.strftime("%Y-%m-%d"))
+col1.metric("👥 Players", len(df_filtered))
+col2.metric("📈 Max Level", int(df_filtered["level"].max()))
+col3.metric("📉 Min Level", int(df_filtered["level"].min()))
+col4.metric("💠 Max Experience", f"{df_filtered['experience'].max():,}")
+col5.metric("🌍 Worlds", df_filtered["world"].nunique())
+col6.metric("📅 Snapshot Date", selected_date.strftime("%Y-%m-%d"))
 
 st.markdown("---")
 
 # ===============================
-# TABELA
+# DATA TABLE
 # ===============================
 st.subheader(f"📋 Ranking - Top {top_n}")
 
+df_display = df_filtered.drop(columns=["snapshot_date"]).sort_values("rank")
+df_display["updated_at"] = df_display["updated_at"].dt.strftime("%Y-%m-%d %H:%M:%S")
+
 st.dataframe(
-    df_filtrado.sort_values("rank"),
+    df_display.style.format({"experience": "{:,.2f}"}),
     use_container_width=True,
     hide_index=True
 )
