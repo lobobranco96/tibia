@@ -99,6 +99,13 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
 | **Visualização** | **Streamlit** | Dashboards interativos e análises visuais. |
 |  **Monitoramento** | **Prometheus + Grafana** | Monitoramento e observabilidade de métricas (Spark, Airflow, containers, etc). |
 
+## Sumário
+
+- [Visão Geral](#visão-geral)
+- [Camada Gold](#4---camada-gold)
+- [DAGs Airflow](https://github.com/lobobranco96/tibia/tree/main/mnt/airflow/dags)
+
+
 ## Fluxo do Pipeline
 
 ### 1. Extração de Dados:
@@ -148,7 +155,76 @@ Nessa etapa:
 A camada Silver garante rastreabilidade, histórico completo e consistência dos dados, servindo como base confiável para análises e agregações na camada Gold.
 
 ### 4. Camada Gold:
-  - EM CONSTRUCAO
+A camada Gold é a camada analítica final do Lakehouse, responsável por consolidar dados agregados e métricas prontas para consumo em dashboards e análises avançadas. Ela utiliza tabelas Iceberg versionadas, garantindo histórico, rastreabilidade e consultas eficientes.
+
+#### Principais Tabelas Gold:
+
+1. **experience_global_rank**
+   - Ranking global de jogadores baseado em `level` e `experience`.
+   - Ordena por `level` desc, `experience` desc e `name` asc.
+   - Atualizada incrementalmente a cada execução, com `updated_at` e `snapshot_date`.
+
+2. **skills_global_rank**
+   - Ranking global de skills por categoria (`category`) de cada jogador.
+   - Ordena por `skill_level` desc e `name` asc dentro de cada categoria.
+   - Particionada por `snapshot_date`, permitindo histórico diário.
+
+3. **world_summary**
+   - Resumo de jogadores por `world`, `world_type` e `vocation`.
+   - Calcula `players_count` (total de jogadores distintos).
+   - Atualizada com timestamp `updated_at`.
+
+4. **experience_progression**
+   - Evolução de `level` e `experience` de cada jogador ao longo do tempo.
+   - Calcula:
+     - `previous_level` e `previous_experience`
+     - `level_gain` e `experience_gain`
+     - `days_between_updates`
+     - `avg_xp_per_day`
+   - Permite análises de progressão histórica e comparativa de jogadores.
+
+5. **skills_progression**
+   - Evolução das skills de cada jogador (`skill_level`) ao longo do tempo.
+   - Calcula:
+     - `skill_before` e `skill_after`
+     - `skill_gain`
+     - `days_between_updates`
+     - `avg_skill_per_day`
+   - Permite análise detalhada de progressão por skill e jogador.
+
+#### Características da camada Gold:
+
+- **Agregações e rankings prontos**:
+  - Rankings globais de experiência e skills.
+  - Resumos por world e vocação.
+  - Evolução temporal de níveis e skills de cada jogador.
+
+- **Versionamento e histórico completo**:
+  - Todas as tabelas são Iceberg + Nessie, com time travel e `current_timestamp` em cada registro.
+  - Permite consultar estados antigos, comparações entre rodadas e auditoria.
+
+- **Atualização incremental**:
+  - Apenas registros novos ou modificados são inseridos.
+  - Registros antigos são preservados com histórico ou marcados como `is_current = false`.
+
+- **Tasks independentes por categoria**:
+  - Cada tabela possui uma task no Airflow, garantindo paralelismo e isolamento de falhas.
+
+- **Prontas para consumo**:
+  - Dashboards Streamlit, consultas SQL via Trino ou outras ferramentas de BI podem acessar diretamente.
+  - Garantia de consistência e auditabilidade.
+
+Exemplo de tabela `experience_global_rank`:
+
+| Rank | Name                | Vocation       | World     | Level | Experience       | WorldType | UpdatedAt           |
+|------|-------------------|----------------|-----------|-------|----------------|-----------|-------------------|
+| 1    | Khaos Poderoso     | Master Sorcerer | Rasteibra | 2515  | 264,738,322,692 | Open PvP  | 2026-02-10 12:00  |
+| 2    | Goa Luccas         | Master Sorcerer | Inabra    | 2357  | 217,738,829,108 | Open PvP  | 2026-02-10 12:00  |
+| 3    | Syriz              | Master Sorcerer | Thyria    | 2189  | 174,396,658,081 | Open PvP  | 2026-02-10 12:00  |
+| 4    | Dany Ellmagnifico  | Master Sorcerer | Inabra    | 2160  | 167,580,849,914 | Open PvP  | 2026-02-10 12:00  |
+| 5    | Zonatto Bombinhams | Master Sorcerer | Honbra    | 2132  | 161,212,779,898 | Open PvP  | 2026-02-10 12:00  |
+
+A camada Gold representa a **versão final e consolidada dos dados do Tibia**, pronta para análise histórica, visualização em dashboards e integração com ferramentas de BI.
 
 ### 5. Consulta e Visualização:
   - Trino permite consultas SQL sobre as tabelas Iceberg versionadas.
@@ -229,9 +305,8 @@ Dependência: É acionada automaticamente somente após os dados chegarem na Lan
 
 Detalhes de execução:
   - Cada categoria Bronze possui um job Spark independente:
-  - Bronze Vocation > Silver Vocation.
-  - Bronze Skills > Silver Skills.
-  - Bronze Extra > Silver Extra.
+  - Bronze Vocation > Silver Vocation 
+  - Bronze Skills > Silver Skills   
 
 Jobs Spark configurados com todos os jars necessários (AWS, Iceberg, Nessie) para garantir integração completa com MinIO/S3 e tabelas Iceberg.
 Camadas envolvidas: Bronze > Silver > Gold (transformações, limpeza, agregações e versionamento).
@@ -329,44 +404,56 @@ As variáveis de ambiente utilizadas pelos serviços (Airflow, Spark, MinIO, Nes
 ```bash
 services/.credentials.env
 ```
+
 Este arquivo contém, entre outras configurações:
  - Credenciais de acesso ao MinIO (S3)
  - Endpoint do Nessie Catalog
  - Configurações do Spark
 
-### Inicialização do Ambiente ###
-O projeto utiliza um Makefile para simplificar a execução e garantir consistência no build e na subida dos containers.
+### Passo a Passo para Subir o Ambiente ###
+
 1. Build das imagens Docker:
 Para construir todas as imagens customizadas (Airflow, Spark, Notebook, Prometheus, etc.):
 ```bash
 make build
 ```
  Esse comando:
-  - Builda todas as imagens definidas em docker/
+  - Esse comando builda todas as imagens definidas em docker/.
 
-2. Criar a rede para o container
+2. Criar a rede Docker
+Cria a rede que será compartilhada pelos containers:
 ```bash
 docker network create lakehouse
 ```
 
 3. Subida dos Containers
+Para iniciar todos os serviços do projeto:
 ```bash
 make up
 ```
-ou
+Ou, separadamente, via Docker Compose:
 ```bash
 docker compose -f services/lakehouse.yaml up -d
 docker compose -f services/orchestration.yaml up -d
 docker compose -f services/processing.yaml up -d
 docker compose -f services/observability.yaml up -d
+docker compose -f services/visualization.yaml up -d
 ```
-Para iniciar todo o ambiente:
- - Inicializa todos os containers definidos em services/*.yaml
- - Sobe o cluster Spark
- - Inicializa Airflow, MinIO, Nessie, Dremio, Prometheus e Grafana
- - Cria a infraestrutura necessária para execução das DAGs e jobs Spark
+Isso inicializa:
+ - Cluster Spark
+ - Apache Airflow
+ - MinIO (Data Lake)
+ - Nessie Catalog
+ - Trino
+ - Prometheus + Grafana
+ - Streamlit
 
-## Serviços Disponíveis
+4. Verificar logs e status dos containers
+```bash
+   docker compose ps
+   docker compose logs -f <nome_do_servico>
+```
+## Acessando os Serviços
 
 Após a inicialização do ambiente, os seguintes serviços ficam acessíveis localmente:
 
