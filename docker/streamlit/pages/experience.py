@@ -2,9 +2,7 @@ import pandas as pd
 import streamlit as st
 from core.queries import experience_global_rank
 
-# ===============================
 # STREAMLIT CONFIG
-# ===============================
 st.set_page_config(
     page_title="Tibia - Global Player Ranking",
     layout="wide"
@@ -12,16 +10,12 @@ st.set_page_config(
 
 st.title("🏆 Tibia - Global Player Ranking")
 
-# ===============================
 # REFRESH BUTTON
-# ===============================
 if st.sidebar.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
-# ===============================
 # LOAD DATA
-# ===============================
 @st.cache_data(show_spinner="Loading global ranking...")
 def load_data():
     df = experience_global_rank()
@@ -39,9 +33,7 @@ def load_data():
 
 df = load_data()
 
-# ===============================
 # SIDEBAR FILTERS
-# ===============================
 st.sidebar.header("🎛️ Filters")
 
 # Snapshot Date
@@ -84,9 +76,7 @@ top_n = st.sidebar.selectbox(
 # Player search
 player_search = st.sidebar.text_input("🔍 Search Player")
 
-# ===============================
 # APPLY FILTERS
-# ===============================
 df_filtered = df[
     (df["snapshot_date"].dt.normalize() == selected_date) &
     (df["rank"] <= top_n) &
@@ -107,9 +97,7 @@ if df_filtered.empty:
 df_filtered = df_filtered.copy()
 df_filtered["experience"] = df_filtered["experience"].astype(float)
 
-# ===============================
 # KPIs
-# ===============================
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 col1.metric("👥 Players", len(df_filtered))
@@ -121,9 +109,7 @@ col6.metric("📅 Snapshot Date", selected_date.strftime("%Y-%m-%d"))
 
 st.markdown("---")
 
-# ===============================
 # DATA TABLE
-# ===============================
 st.subheader(f"📋 Ranking - Top {top_n}")
 
 df_display = df_filtered.drop(columns=["snapshot_date"]).sort_values("rank")
@@ -134,3 +120,4 @@ st.dataframe(
     use_container_width=True,
     hide_index=True
 )
+
