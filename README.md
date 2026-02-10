@@ -13,7 +13,7 @@ Isso dificulta análises como:
 
 - Evolução de jogadores ao longo do tempo
 - Comparação entre vocações e tipos de mundo
-- Análises históricas de ranking por skill ou categoria
+- Análises históricas de ranking por skill ou experiencia
 - Criação de dashboards personalizados e reutilizáveis
 
 Este projeto surge para resolver esse problema por meio de uma arquitetura de dados moderna, confiável e escalável, permitindo análises históricas e versionadas dos rankings do jogo.
@@ -101,9 +101,15 @@ A pipeline segue o padrão **medallion architecture** (Bronze → Silver → Gol
 
 ## Sumário
 
-- [Visão Geral](#visão-geral)
-- [Camada Gold](#4---camada-gold)
+- [Visão Geral](https://github.com/lobobranco96/tibia)
+- [Source code](https://github.com/lobobranco96/tibia/tree/main/mnt/src)
+- [Lakehouse Data](https://github.com/lobobranco96/tibia/tree/main/mnt/minio/lakehouse)
+- [Notebooks](https://github.com/lobobranco96/tibia/tree/main/mnt/notebooks)
 - [DAGs Airflow](https://github.com/lobobranco96/tibia/tree/main/mnt/airflow/dags)
+- [Docker Services](https://github.com/lobobranco96/tibia/tree/main/services)
+- [Images](https://github.com/lobobranco96/tibia/tree/main/docs)
+- [Dockerfile Builds](https://github.com/lobobranco96/tibia/tree/main/docker)
+- [Streamlit App - Visualization Layer](https://github.com/lobobranco96/tibia/tree/main/docker/streamlit)
 
 
 ## Fluxo do Pipeline
