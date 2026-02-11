@@ -9,7 +9,7 @@ def experience_global_rank(snapshot_date=None):
         snapshot_date = str(snapshot_date)[:10]
 
         query = f"""
-            SELECT
+            SELECT DISTINCT
                 rank,
                 name,
                 world,
@@ -25,7 +25,7 @@ def experience_global_rank(snapshot_date=None):
         """
     else:
         query = """
-            SELECT
+            SELECT DISTINCT
                 rank,
                 name,
                 world,
@@ -114,7 +114,7 @@ def player_progression():
             days_between_updates,
             avg_xp_per_day,
             is_current
-        FROM nessie.gold.experience_progression
+        FROM nessie.gold.player_progression
     """
 
     return pd.read_sql(query, conn)
