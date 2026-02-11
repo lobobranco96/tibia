@@ -11,22 +11,24 @@ class Gold:
         logging.info("Atualizando ranking global de experiencia.")
 
         return self.spark.sql("""
-            INSERT INTO nessie.gold.experience_global_rank
-            SELECT
-                ROW_NUMBER() OVER (
-                    ORDER BY level DESC, experience DESC, name ASC
-                ) AS rank,
-                name,
-                world,
-                vocation,
-                level,
-                experience,
-                world_type,
-                current_timestamp() AS updated_at,
-                DATE(current_timestamp()) AS snapshot_date
-            FROM nessie.silver.vocation
-            WHERE is_current = true
+        INSERT OVERWRITE nessie.gold.experience_global_rank
+        PARTITION (snapshot_date)
+        SELECT
+            ROW_NUMBER() OVER (
+                ORDER BY level DESC, experience DESC, name ASC
+            ) AS rank,
+            name,
+            world,
+            vocation,
+            level,
+            experience,
+            world_type,
+            current_timestamp() AS updated_at,
+            DATE(current_timestamp()) AS snapshot_date
+        FROM nessie.silver.vocation
+        WHERE is_current = true
         """)
+
 
 
     def skills_global_rank(self):
@@ -34,22 +36,22 @@ class Gold:
         logging.info("Atualizando ranking global de skills.")
 
         return self.spark.sql("""
-            INSERT OVERWRITE nessie.gold.skills_global_rank
-            PARTITION (snapshot_date)
-            SELECT
-                ROW_NUMBER() OVER (
-                    PARTITION BY category
-                    ORDER BY skill_level DESC, name ASC
-                ) AS rank,
-                name,
-                world,
-                category AS skill_name,
-                vocation,
-                skill_level,
-                current_timestamp() AS updated_at,
-                DATE(current_timestamp()) AS snapshot_date
-            FROM nessie.silver.skills
-            WHERE is_current = true
+        INSERT OVERWRITE nessie.gold.skills_global_rank
+        PARTITION (snapshot_date)
+        SELECT
+            ROW_NUMBER() OVER (
+                PARTITION BY category
+                ORDER BY skill_level DESC, name ASC
+            ) AS rank,
+            name,
+            world,
+            category AS skill_name,
+            vocation,
+            skill_level,
+            current_timestamp() AS updated_at,
+            DATE(current_timestamp()) AS snapshot_date
+        FROM nessie.silver.skills
+        WHERE is_current = true
         """)
 
     def world_summary(self):
@@ -74,12 +76,12 @@ class Gold:
                 , vocation
         """)
     
-    def experience_progression(self):
+    def player_progression(self):
 
         logging.info("Atualizando evolução de level e experiência por player.")
 
         return self.spark.sql("""
-            CREATE OR REPLACE TABLE nessie.gold.experience_progression
+            CREATE OR REPLACE TABLE nessie.gold.player_progression
             USING iceberg
             AS
             WITH ordered_vocation AS (

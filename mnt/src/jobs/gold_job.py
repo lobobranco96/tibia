@@ -21,10 +21,10 @@ if __name__ == "__main__":
 
         gold = Gold(spark)
 
-        gold.experience_rank_atualizado()
-        gold.skills_rank_atualizado()
+        gold.experience_global_rank()
+        gold.skills_global_rank()
         gold.world_summary()
-        gold.experience_progression()
+        gold.player_progression()
         gold.skills_progression()
 
         logging.info("Job Gold executado com sucesso.")
