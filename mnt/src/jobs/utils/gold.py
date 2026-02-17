@@ -28,25 +28,21 @@ class Gold:
 
 
     def skills_global_rank(self):
-
-        logging.info("Atualizando ranking global de skills.")
-
+    
+        logging.info("Atualizando histórico global de skills.")
+    
         return self.spark.sql("""
-        INSERT INTO nessie.gold.skills_global_rank
-        SELECT
-            ROW_NUMBER() OVER (
-                PARTITION BY category, CAST(ingestion_time AS DATE)
-                ORDER BY skill_level DESC, name ASC
-            ) AS rank,
-            name,
-            world,
-            category AS skill_name,
-            vocation,
-            skill_level,
-            ingestion_time AS updated_at,
-            CAST(ingestion_time AS DATE) AS snapshot_date
-        FROM nessie.silver.skills
-        WHERE is_current = true;
+            INSERT INTO nessie.gold.skills_global_rank
+            SELECT
+                name,
+                world,
+                category AS skill_name,
+                vocation,
+                skill_level,
+                ingestion_time AS updated_at,
+                CAST(ingestion_time AS DATE) AS snapshot_date
+            FROM nessie.silver.skills
+            WHERE is_current = true
         """)
 
     def world_summary(self):
@@ -217,4 +213,5 @@ class Gold:
 
             FROM ordered_progression
             WHERE previous_skill_level IS NOT NULL
+
         """)
