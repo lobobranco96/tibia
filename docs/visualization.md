@@ -205,3 +205,8 @@ Ordenação:
   - Forte desacoplamento entre processamento e visualização
   - Escalável para novos dashboards
   - Compatível com qualquer engine SQL que suporte Iceberg
+
+## Integração com Pipeline
+
+Os dashboards são atualizados automaticamente após sucesso da DAG lakehouse_pipeline.
+Nenhuma carga manual é necessária.
