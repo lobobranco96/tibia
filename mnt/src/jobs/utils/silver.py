@@ -1,7 +1,7 @@
 import logging
 import sys
 from pyspark.sql import functions as F
-
+from pyspark.sql.window import Window
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
@@ -37,9 +37,7 @@ class Silver:
         """
         self.spark = spark
 
-    # =======================================================================
-    # VOCATION
-    # =======================================================================
+    # SILVER.VOCATION
     def vocation(self):
         """
         Processa a camada Silver do domínio 'vocation'.
@@ -167,9 +165,8 @@ class Silver:
 
         self.spark.stop()
         logging.info("Sessão spark encerrada com sucesso.")
-    # =======================================================================
-    # SKILLS
-    # =======================================================================
+
+    # SILVER.SKILLS
     def skills(self):
         """
         Processa a camada Silver do domínio 'skills' aplicando SCD Type 2.
@@ -194,27 +191,26 @@ class Silver:
                 "none"
             )
             self.spark.conf.set("spark.sql.files.maxRecordsPerFile", 500000)
-            self.spark.conf.set("spark.sql.iceberg.write.target-file-size-bytes", 134217728)  # 128MB
-
-            logging.info("Tabela Silver 'skills' inicializada com sucesso.")
-
-            # Leitura Bronze
-            df_bronze_all = self.spark.read.table("nessie.bronze.skills")
-            last_batch_id = (
-                df_bronze_all
-                .orderBy(F.col("ingestion_time").desc())
-                .select("batch_id")
-                .first()["batch_id"]
+            self.spark.conf.set(
+                "spark.sql.iceberg.write.target-file-size-bytes",
+                134217728
             )
-            
-            logging.info(f"Processando batch_id: {last_batch_id}")
-            df_bronze = df_bronze_all.filter(F.col("batch_id") == last_batch_id)
+
+            logging.info("Iniciando processamento Silver - skills")
+
+            # ======================================================
+            # READ BRONZE (SEM FILTRO POR BATCH)
+            # ======================================================
+            df_bronze = self.spark.read.table("nessie.bronze.skills")
+
             if df_bronze.head(1) == []:
-                logging.warning("Nenhum dado encontrado na Bronze. Encerrando execução.")
+                logging.warning("Nenhum dado encontrado na Bronze.")
                 return
 
-            # Novos registros
-            df_new = (
+            # ======================================================
+            # PREPARE UPDATES (HASH + SCD2 COLUMNS)
+            # ======================================================
+            df_updates = (
                 df_bronze
                 .withColumn(
                     "hash_diff",
@@ -232,64 +228,83 @@ class Silver:
                 .withColumn("is_current", F.lit(True))
             )
 
-            df_new.createOrReplaceTempView("skills_updates")
-            logging.info("View temporária 'skills_updates' criada com sucesso.")
+            window_updates = Window.partitionBy(
+                "name",
+                "world",
+                "category"
+            ).orderBy(F.col("ingestion_time").desc())
 
-            merge_update_query = """
-            MERGE INTO nessie.silver.skills t
-            USING skills_updates s
-            ON  t.name = s.name
-            AND t.world = s.world
-            AND t.category = s.category
-            AND t.is_current = TRUE
-
-            WHEN MATCHED
-            AND t.hash_diff <> s.hash_diff
-            THEN UPDATE SET
-                t.end_date = current_timestamp(),
-                t.is_current = FALSE
-            """
-            self.spark.sql(merge_update_query)
-            logging.info("UPDATE finalizado com sucesso!")
-
-            insert_query = """
-            INSERT INTO nessie.silver.skills
-            SELECT
-                s.name,
-                s.world,
-                s.category,
-                s.vocation,
-                s.skill_level,
-                s.ingestion_time,
-                current_timestamp() AS start_date,
-                NULL AS end_date,
-                TRUE AS is_current,
-                s.hash_diff
-            FROM skills_updates s
-            LEFT ANTI JOIN nessie.silver.skills t
-            ON  t.name = s.name
-            AND t.world = s.world
-            AND t.category = s.category
-            AND t.is_current = TRUE
-            """
-            self.spark.sql(insert_query)
-            logging.info("INSERT finalizado com sucesso!")
+            df_updates = (
+                df_updates
+                .withColumn("rn", F.row_number().over(window_updates))
+                .filter("rn = 1")
+                .drop("rn")
+            )
+            df_updates.createOrReplaceTempView("skills_updates")
 
 
-            # Auditoria
+            # CLOSE OLD RECORDS
+            self.spark.sql("""
+                MERGE INTO nessie.silver.skills t
+                USING skills_updates s
+                ON  t.name = s.name
+                AND t.world = s.world
+                AND t.category = s.category
+                AND t.is_current = TRUE
+
+                WHEN MATCHED
+                AND t.hash_diff <> s.hash_diff
+                THEN UPDATE SET
+                    t.end_date = current_timestamp(),
+                    t.is_current = FALSE
+            """)
+
+            logging.info("UPDATE (SCD2) executado.")
+
+            # ======================================================
+            # INSERT NEW RECORDS
+            # ======================================================
+            self.spark.sql("""
+                INSERT INTO nessie.silver.skills
+                SELECT
+                    s.name,
+                    s.world,
+                    s.category,
+                    s.vocation,
+                    s.skill_level,
+                    s.ingestion_time,
+                    current_timestamp() AS start_date,
+                    NULL AS end_date,
+                    TRUE AS is_current,
+                    s.hash_diff
+                FROM skills_updates s
+                LEFT ANTI JOIN nessie.silver.skills t
+                    ON  t.name = s.name
+                    AND t.world = s.world
+                    AND t.category = s.category
+                    AND t.is_current = TRUE
+            """)
+
+            logging.info("INSERT executado.")
+
+            # ======================================================
+            # AUDIT
+            # ======================================================
             df_check = self.spark.read.table("nessie.silver.skills")
+
             total_rows = df_check.count()
             current_rows = df_check.filter("is_current = true").count()
 
-            logging.info(f"Total de registros na Silver: {total_rows}")
-            logging.info(f"Registros atuais (is_current = true): {current_rows}")
+            logging.info(f"Total registros Silver skills: {total_rows}")
+            logging.info(f"Registros atuais: {current_rows}")
 
             self.spark.stop()
-            logging.info("Sessão spark encerrada com sucesso.")
+            logging.info("Spark session encerrada.")
 
         except Exception as e:
-            logging.exception(f"Falha no job Silver (skills): {str(e)}")
+            logging.exception(f"Erro Silver skills: {str(e)}")
             sys.exit(1)
+
             
     # =======================================================================
     # EXTRA
