@@ -14,7 +14,7 @@ O desenho prioriza:
 
 ---
 
-## Orquestração com Apache Airflow com Apache Airflow
+## Orquestração com Apache Airflow
 O projeto utiliza duas DAGs principais para gerenciar o fluxo completo de dados, garantindo que a extração e o processamento sejam organizados, escaláveis e rastreáveis.
 
 ### DAGs Principais
@@ -117,7 +117,7 @@ Detalhes de execução:
 Jobs Spark configurados com todos os jars necessários (AWS, Iceberg, Nessie) para garantir integração completa com MinIO/S3 e tabelas Iceberg.
 Camadas envolvidas: Bronze > Silver > Gold (transformações, limpeza, agregações e versionamento).
 
-Output: Tabelas Iceberg versionadas, auditáveis e prontas para consultas via Dremio ou dashboards.
+Output: Tabelas Iceberg versionadas, auditáveis e prontas para consultas via Trino e dashboards.
 
 ```text
 landing_highscores_pipeline (DAG de extração)
@@ -192,5 +192,5 @@ Gold	| INSERT
   - Reprocessável
 
 ## Screenshot
-![Lakehouse Pipeline](docs/lakehouse_pipeline_success.png)
-![Landing Highscore Pipeline](docs/landing__highscore_pipeline_success.png)
+![Lakehouse Pipeline](images/airflow/lakehouse_pipeline_success.png)
+![Landing Highscore Pipeline](images/airflow/landing__highscore_pipeline_success.png)
