@@ -1,4 +1,4 @@
-# Projeto: Tibia Highscore Data Lakehouse
+# Lakehouse open-source para histórico de rankings do Tibia usando Airflow + Spark + Iceberg + Nessie + MinIO + Trino + Streamlit.
 
 ## Visão Geral
 
