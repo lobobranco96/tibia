@@ -14,7 +14,10 @@ O desenho prioriza:
 
 ---
 
-## DAGs Principais
+## Orchestração com Apache Airflow
+O projeto utiliza duas DAGs principais para gerenciar o fluxo completo de dados, garantindo que a extração e o processamento sejam organizados, escaláveis e rastreáveis.
+
+### DAGs Principais
 
 O projeto possui duas DAGs:
 
@@ -23,20 +26,50 @@ O projeto possui duas DAGs:
 
 ---
 
-## 1. landing_highscores_pipeline
-
-Responsável pela extração dos dados do site do Tibia e gravação na camada Landing.
-
-### Fluxo
+### 1 - DAG de Extração e Ingestão (landing_highscores_pipeline)
 
 ```text
-Extract Vocation: no_vocation, knight, paladin, sorcerer, druid, monk.
-Extract Skills: axe, sword, club, distance, magic_level, fist, shielding, fishing.
-        |
-        v
-Save CSV in Landing (MinIO)
-
+┌─────────────────────────────┐
+│   Extração / Scraping       │
+│ (Airflow - Landing DAG)     │
+└──────────────┬──────────────┘
+               │
+               v
+┌─────────────────────────────────────────────┐
+│               LANDING (MinIO)               │
+│                                             │
+│ landing/year=YYYY/month=MM/day=DD/          │
+│ ├── vocation/                               │
+│ │    ├── knight_*.csv                       │
+│ │    ├── druid_*.csv                        │
+│ │    └── _SUCCESS                           │
+│ │                                           │
+│ ├── skills/                                 │
+│ │    ├── axe_*.csv                          │
+│ │    ├── sword_*.csv                        │
+│ │    └── _SUCCESS                           │
+│ │                                           │
+│ └── extra/                                  │
+│      ├── achievements_*.csv                 │
+│      ├── boss_*.csv                         │
+│      └── _SUCCESS                           │
+└──────────────┬──────────────┬───────────────┘
+               │              │
+               │              │
 ```
+Objetivo: Coletar dados brutos do Tibia, por vocação, skills e categorias extras, e salvar na camada Landing (MinIO/S3) como CSVs particionados por data.
+### Características
+   - Cada vocação e categoria possui uma task independente, permitindo execução paralela.
+   - Falhas em uma task não interrompem as demais, garantindo robustez.
+   - Após a extração, os dados ficam prontos para processamento na camada Bronze.
+   - Execução paralela
+   - Retry automático
+            
+Camadas envolvidas: Landing → Bronze (pré-processamento inicial, validação e organização dos CSVs).
+Exemplo de tasks:
+   - extract_vocation (none, knight, paladin, sorcerer, druid, monk)
+   - extract_skills (axe, sword, club, distance, magic_level, fist, shielding)
+
 ### Características
   - Cada vocação é uma task independente
   - Cada skill é uma task independente
@@ -44,11 +77,11 @@ Save CSV in Landing (MinIO)
   - Execução paralela
   - Retry automático
 
-### Output
-
+### Output: Arquivos CSV no MinIO organizados por:
 ```text
 s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<arquivo>.csv
 ```
+
 Exemplo de DataFrame:
 
 | Rank | Name                | Vocation       | World     | Level | Points         | WorldType |
@@ -60,22 +93,48 @@ Exemplo de DataFrame:
 | 5    | Zonatto Bombinhams  | Master Sorcerer | Honbra    | 2132  | 161,212,779,898 | Open PvP  |
 
 
-## 2. lakehouse_pipeline
+### 2 - DAG do Lakehouse (lakehouse_pipeline)
 
 ```text
-S3KeySensor
-     |
-Spark Bronze Job
-     |
-Spark Silver Job
-     |
-Spark Gold Job
+        ┌───────────────────────────┐            ┌───────────────────────────┐       
+        │   S3KeySensor (vocation)  │            │   S3KeySensor (skills)    │       
+        │ espera: vocation/_SUCCESS │            │ espera: skills/_SUCCESS   │      
+        └──────────────┬────────────┘            └──────────────┬────────────┘        
+                       │                                        │                                 
+                       v                                        v                               
+            ┌───────────────────────┐               ┌───────────────────────┐        
+            │ Spark Bronze Vocation │               │ Spark Bronze Skills   │       
+            └───────────────────────┘               └───────────────────────┘          
 ```
+Objetivo: Processar os dados da camada Bronze e gerar tabelas versionadas nas camadas Silver e Gold, utilizando Spark, Iceberg e Nessie.
+Dependência: É acionada automaticamente somente após os dados chegarem na Landing. Com isso o SparkSubmitOperator envia um comando spark-submit para o cluster Spark, iniciando a execução de um job PySpark customizado, responsável por processar os dados a partir dos arquivos da camada Landing e executar as transformações das camadas Bronze e Silver.
 
 ### Características
   - Jobs Spark separados por domínio
   - Uso de SparkSubmitOperator
   - Escrita Iceberg + Nessie
+  - 
+Detalhes de execução:
+  - Cada categoria Bronze possui um job Spark independente:
+  - Bronze Vocation > Silver Vocation 
+  - Bronze Skills > Silver Skills   
+
+
+Jobs Spark configurados com todos os jars necessários (AWS, Iceberg, Nessie) para garantir integração completa com MinIO/S3 e tabelas Iceberg.
+Camadas envolvidas: Bronze > Silver > Gold (transformações, limpeza, agregações e versionamento).
+
+Output: Tabelas Iceberg versionadas, auditáveis e prontas para consultas via Dremio ou dashboards.
+
+```text
+landing_highscores_pipeline (DAG de extração)
+        |
+        v
+lakehouse_pipeline (DAG de processamento)
+        |
+        v
+Bronze -> Silver -> Gold (Iceberg + Nessie)
+```
+
 
 ## Camadas Envolvidas
 
