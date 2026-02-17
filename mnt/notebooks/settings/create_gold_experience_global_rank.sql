@@ -1,5 +1,4 @@
 CREATE TABLE IF NOT EXISTS nessie.gold.experience_global_rank (
-    rank INT,
     name STRING,
     world STRING,
     vocation STRING,
@@ -10,4 +9,7 @@ CREATE TABLE IF NOT EXISTS nessie.gold.experience_global_rank (
     snapshot_date DATE
 )
 USING iceberg
-PARTITIONED BY (snapshot_date);
+PARTITIONED BY (snapshot_date)
+TBLPROPERTIES (
+    'format-version' = '2'
+);;

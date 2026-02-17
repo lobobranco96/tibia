@@ -1,5 +1,5 @@
-CREATE TABLE nessie.gold.skills_global_rank (
-    rank INT,
+CREATE TABLE IF NOT EXISTS nessie.gold.skills_global_rank (
+    rank BIGINT,
     name STRING,
     world STRING,
     skill_name STRING,
@@ -9,4 +9,7 @@ CREATE TABLE nessie.gold.skills_global_rank (
     snapshot_date DATE
 )
 USING iceberg
-PARTITIONED BY (snapshot_date);
+PARTITIONED BY (snapshot_date)
+TBLPROPERTIES (
+    'format-version' = '2'
+);
