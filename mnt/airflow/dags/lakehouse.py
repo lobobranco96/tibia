@@ -104,7 +104,7 @@ def spark_task(task_id, app_path, args=None):
     dag_id="lakehouse_pipeline",
     description="Lakehouse pipeline: processa dados da camada Bronze até Silver utilizando Spark + Iceberg.",
     default_args=default_args,
-    start_date=datetime(2025, 1, 5),
+    start_date=datetime(2025, 2, 12),
     tags=["tibia", "lakehouse", "etl"]
 )
 def lakehouse_pipeline():
