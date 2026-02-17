@@ -30,11 +30,12 @@ Responsável pela extração dos dados do site do Tibia e gravação na camada L
 ### Fluxo
 
 ```text
-Extract Vocation
-Extract Skills (categories)
+Extract Vocation: no_vocation, knight, paladin, sorcerer, druid, monk.
+Extract Skills: axe, sword, club, distance, magic_level, fist, shielding, fishing.
         |
         v
 Save CSV in Landing (MinIO)
+
 ```
 ### Características
   - Cada vocação é uma task independente
@@ -48,6 +49,16 @@ Save CSV in Landing (MinIO)
 ```text
 s3://landing/year=YYYY/month=MM/day=DD/<categoria>/<arquivo>.csv
 ```
+Exemplo de DataFrame:
+
+| Rank | Name                | Vocation       | World     | Level | Points         | WorldType |
+|------|--------------------|----------------|-----------|-------|----------------|-----------|
+| 1    | Khaos Poderoso      | Master Sorcerer | Rasteibra | 2515  | 264,738,322,692 | Open PvP  |
+| 2    | Goa Luccas          | Master Sorcerer | Inabra    | 2357  | 217,738,829,108 | Open PvP  |
+| 3    | Syriz               | Master Sorcerer | Thyria    | 2189  | 174,396,658,081 | Open PvP  |
+| 4    | Dany Ellmagnifico   | Master Sorcerer | Inabra    | 2160  | 167,580,849,914 | Open PvP  |
+| 5    | Zonatto Bombinhams  | Master Sorcerer | Honbra    | 2132  | 161,212,779,898 | Open PvP  |
+
 
 ## 2. lakehouse_pipeline
 
@@ -69,20 +80,36 @@ Spark Gold Job
 ## Camadas Envolvidas
 
 Landing → Bronze
-  - Leitura CSV
-  - Padronização
-  - Tipagem
-  - Deduplicação
-  - Inclusão de metadados
+A camada Bronze é responsável por estruturar os dados brutos provenientes da camada Landing, garantindo padronização, versionamento e auditabilidade.
+Nessa etapa:
+  - Os arquivos CSV são lidos do MinIO, particionados por data.
+  - As tabelas Iceberg são criadas automaticamente no catálogo Nessie.
+  - São validadas colunas obrigatórias e aplicadas normalizações leves (tipos, textos e nomes).
+  - Os dados recebem metadados de ingestão (batch_id, ingestion_time, ingestion_date).
+  - Registros duplicados dentro do mesmo batch são removidos
+
+A escrita é realizada de forma incremental (append), preservando o histórico completo.
+Essa camada serve como base confiável e governada para as transformações nas camadas Silver e Gold.
 
 Bronze → Silver
-  - Identificação de mudanças
-  - SCD Type 2
-  - MERGE INTO Iceberg
+A camada Silver é responsável por aplicar regras de negócio e versionar o histórico dos dados utilizando o padrão SCD Type 2.
+Nessa etapa:
+ - Os dados mais recentes da camada Bronze são lidos com base no último batch_id.
+ - São criadas tabelas Iceberg no catálogo Nessie, caso não existam.
+ - São geradas colunas de controle temporal (start_date, end_date, is_current).
+ - Alterações nos registros são identificadas por meio de hash_diff.
+
+É executado MERGE INTO para:
+ - Encerrar versões antigas quando há mudanças.
+ - Inserir novas versões mantendo o histórico.
+ - Apenas um registro por chave de negócio permanece como atual (is_current = true).
+
+A camada Silver garante rastreabilidade, histórico completo e consistência dos dados, servindo como base confiável para análises e agregações na camada Gold.
 
 Silver → Gold
-  - Inserção incremental
-  - Tabelas analíticas
+A camada Gold é a camada analítica final do Lakehouse, responsável por consolidar dados agregados e métricas prontas para consumo em dashboards e análises avançadas. Ela utiliza tabelas Iceberg versionadas, garantindo histórico, rastreabilidade e consultas eficientes.
+Criação das tabelas da camada gold
+
 
 ### Estratégia de Incrementalidade
 
