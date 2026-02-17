@@ -142,8 +142,10 @@ Controladas pelo Nessie
 Possuem:
   - ingestion_time
   - snapshot_date
+  - start_date
+  - end_date
   - is_current (Silver)
-  - 
+    
 Permite:
   - Auditoria
   - Reprocessamento
@@ -210,3 +212,9 @@ Permite:
 │   ├── processing.yaml
 │   └── visualization.yaml
 ```
+
+## Documentação Relacionada
+
+- Pipeline: pipeline.md  
+- Visualização: visualization.md  
+- Ambiente: environment.md  
