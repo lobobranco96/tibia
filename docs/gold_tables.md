@@ -2,6 +2,17 @@
    - Ranking global de jogadores baseado em `level` e `experience`.
    - Ordena por `level` desc, `experience` desc e `name` asc.
    - Atualizada incrementalmente a cada execução, com `updated_at` e `snapshot_date`.
+   - 
+Exemplo de tabela `experience_global_rank`:
+
+| Rank | Name                | Vocation       | World     | Level | Experience       | WorldType | UpdatedAt           |
+|------|-------------------|----------------|-----------|-------|----------------|-----------|-------------------|
+| 1    | Khaos Poderoso     | Master Sorcerer | Rasteibra | 2515  | 264,738,322,692 | Open PvP  | 2026-02-10 12:00  |
+| 2    | Goa Luccas         | Master Sorcerer | Inabra    | 2357  | 217,738,829,108 | Open PvP  | 2026-02-10 12:00  |
+| 3    | Syriz              | Master Sorcerer | Thyria    | 2189  | 174,396,658,081 | Open PvP  | 2026-02-10 12:00  |
+| 4    | Dany Ellmagnifico  | Master Sorcerer | Inabra    | 2160  | 167,580,849,914 | Open PvP  | 2026-02-10 12:00  |
+| 5    | Zonatto Bombinhams | Master Sorcerer | Honbra    | 2132  | 161,212,779,898 | Open PvP  | 2026-02-10 12:00  |
+
 
 2. **skills_global_rank**
    - Ranking global de skills por categoria (`category`) de cada jogador.
