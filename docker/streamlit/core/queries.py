@@ -5,76 +5,78 @@ from core.trino_session import get_trino_connection
 def experience_global_rank(snapshot_date=None):
     conn = get_trino_connection()
 
+    base_query = """
+   WITH dedup AS (
+        SELECT
+            name,
+            world,
+            vocation,
+            level,
+            experience,
+            world_type,
+            updated_at,
+            snapshot_date,
+            ROW_NUMBER() OVER (
+                PARTITION BY snapshot_date, name
+                ORDER BY updated_at DESC
+            ) AS rn
+        FROM nessie.gold.experience_global_rank
+    ),
+    latest AS (
+        SELECT *
+        FROM dedup
+        WHERE rn = 1
+    )
+    SELECT
+        ROW_NUMBER() OVER (
+            PARTITION BY snapshot_date
+            ORDER BY experience DESC, level DESC, name ASC
+        ) AS rank,
+        name,
+        world,
+        vocation,
+        level,
+        experience,
+        world_type,
+        updated_at,
+        snapshot_date
+    FROM latest
+    """
+
     if snapshot_date:
         snapshot_date = str(snapshot_date)[:10]
+        base_query += f" WHERE snapshot_date = DATE '{snapshot_date}'"
 
-        query = f"""
-            SELECT DISTINCT
-                rank,
-                name,
-                world,
-                vocation,
-                level,
-                experience,
-                world_type,
-                updated_at,
-                snapshot_date
-            FROM nessie.gold.experience_global_rank
-            WHERE snapshot_date = DATE '{snapshot_date}'
-            ORDER BY rank
-        """
-    else:
-        query = """
-            SELECT DISTINCT
-                rank,
-                name,
-                world,
-                vocation,
-                level,
-                experience,
-                world_type,
-                updated_at,
-                snapshot_date
-            FROM nessie.gold.experience_global_rank
-            ORDER BY snapshot_date DESC, rank
-        """
+    base_query += " ORDER BY snapshot_date DESC, rank"
 
-    return pd.read_sql(query, conn)
+    return pd.read_sql(base_query, conn)
+
 
 # SKILLS GLOBAL RANK
 def skills_global_rank(snapshot_date=None):
     conn = get_trino_connection()
 
-    if snapshot_date:
-        query = f"""
-            SELECT
-                rank,
-                name,
-                world,
-                skill_name,
-                vocation,
-                skill_level,
-                updated_at,
-                snapshot_date
-            FROM nessie.gold.skills_global_rank
-            WHERE snapshot_date = DATE '{snapshot_date}'
-            ORDER BY skill_name, rank
-        """
-    else:
-        query = """
-            SELECT
-                rank,
-                name,
-                world,
-                skill_name,
-                vocation,
-                skill_level,
-                updated_at,
-                snapshot_date
-            FROM nessie.gold.skills_global_rank
-        """
+    base_query = """
+        SELECT
+            rank,
+            name,
+            world,
+            skill_name,
+            vocation,
+            skill_level,
+            updated_at,
+            snapshot_date
+        FROM nessie.gold.skills_global_rank
+    """
 
-    return pd.read_sql(query, conn)
+    if snapshot_date:
+        snapshot_date = str(snapshot_date)[:10]
+        base_query += f" WHERE snapshot_date = DATE '{snapshot_date}'"
+
+    base_query += " ORDER BY snapshot_date DESC, skill_name, rank"
+
+    return pd.read_sql(base_query, conn)
+
 
 
 # WORLD SUMMARY

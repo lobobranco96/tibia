@@ -27,9 +27,9 @@ def load_data():
     df = skills_global_rank()
 
     df["updated_at"] = pd.to_datetime(df["updated_at"])
+    df["snapshot_date"] = pd.to_datetime(df["snapshot_date"])
     df["rank"] = df["rank"].astype(int)
 
-    # Normalize text
     df["world"] = df["world"].str.title()
     df["vocation"] = df["vocation"].str.title()
     df["skill_name"] = df["skill_name"].str.title()
@@ -38,12 +38,28 @@ def load_data():
 
 df = load_data()
 
+if df.empty:
+    st.warning("No data available.")
+    st.stop()
+
 # ===============================
 # SIDEBAR FILTERS
 # ===============================
 st.sidebar.header("🎛️ Filters")
 
-# Skill / Category
+# Snapshot Date
+available_dates = sorted(
+    df["snapshot_date"].dt.normalize().unique(),
+    reverse=True
+)
+
+selected_date = st.sidebar.selectbox(
+    "📅 Snapshot Date",
+    available_dates,
+    format_func=lambda x: x.strftime("%Y-%m-%d")
+)
+
+# Skill
 skill_selected = st.sidebar.selectbox(
     "Category",
     sorted(df["skill_name"].unique())
@@ -60,7 +76,7 @@ top_n = st.sidebar.selectbox(
     index=2
 )
 
-# Player search
+# Player Search
 player_search = st.sidebar.text_input(
     "🔍 Search Player",
     value=""
@@ -70,6 +86,7 @@ player_search = st.sidebar.text_input(
 # APPLY FILTERS
 # ===============================
 filtered_df = df[
+    (df["snapshot_date"].dt.normalize() == selected_date) &
     (df["skill_name"] == skill_selected) &
     (df["rank"] <= top_n)
 ]
@@ -78,7 +95,9 @@ if world_selected != "All":
     filtered_df = filtered_df[filtered_df["world"] == world_selected]
 
 if player_search:
-    filtered_df = filtered_df[filtered_df["name"].str.lower().str.contains(player_search)]
+    filtered_df = filtered_df[
+        filtered_df["name"].str.lower().str.contains(player_search)
+    ]
 
 if filtered_df.empty:
     st.warning("No data found for selected filters.")
@@ -87,13 +106,20 @@ if filtered_df.empty:
 # ===============================
 # METRICS
 # ===============================
-col1, col2, col3, col4, col5 = st.columns(5)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 col1.metric("👥 Players", len(filtered_df))
 col2.metric("📈 Max Skill", int(filtered_df["skill_level"].max()))
 col3.metric("📉 Min Skill", int(filtered_df["skill_level"].min()))
 col4.metric("🌍 Worlds", filtered_df["world"].nunique())
-col5.metric("🕒 Last Update", filtered_df["updated_at"].max().strftime("%Y-%m-%d %H:%M:%S"))
+col5.metric(
+    "🕒 Last Update",
+    filtered_df["updated_at"].max().strftime("%Y-%m-%d %H:%M:%S")
+)
+col6.metric(
+    "📅 Snapshot Date",
+    selected_date.strftime("%Y-%m-%d")
+)
 
 st.markdown("---")
 
@@ -103,11 +129,14 @@ st.markdown("---")
 st.subheader(f"📋 {skill_selected} — Top {top_n}")
 
 df_display = filtered_df.copy()
-df_display["updated_at"] = df_display["updated_at"].dt.strftime("%Y-%m-%d %H:%M:%S")
+df_display["updated_at"] = df_display["updated_at"].dt.strftime(
+    "%Y-%m-%d %H:%M:%S"
+)
 
 st.dataframe(
-    df_display[["rank", "name", "world", "vocation", "skill_level", "updated_at"]]
-    .sort_values("rank"),
+    df_display[
+        ["rank", "name", "world", "vocation", "skill_level", "updated_at"]
+    ].sort_values("rank"),
     use_container_width=True,
     hide_index=True
 )
