@@ -110,3 +110,7 @@ Gold	| INSERT
   - Alta confiabilidade
   - Escalável
   - Reprocessável
+
+## Screanshot
+![Lakehouse Pipeline](docs/lakehouse_pipeline_success.png)
+![Landing Highscore Pipeline](docs/landing__highscore_pipeline_success.png)
