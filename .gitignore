@@ -221,7 +221,7 @@ mnt/minio/lakehouse/silver/skills_79d26fb2-058d-4e95-bee8-6b0cdc32189d/data/
 mnt/minio/lakehouse/silver/vocation_a5a6c13a-aff7-435e-93d0-c3f77d5ba467/data/
 
 mnt/minio/lakehouse/gold/experience_global_rank_a6255f43-20bb-49c2-a311-c4c297fe2224/data/
-mnt/minio/lakehouse/gold/experience_progression_b17d8623-f81e-488f-a042-873d5d28dd84/data/
+mnt/minio/lakehouse/gold/player_progression_bf43f0f8-adb8-4b6b-96b6-30b69d93b068/data/
 mnt/minio/lakehouse/gold/skills_global_rank_97484ed7-f0d6-4c2c-8f45-682c6ff2e6b9/data/
 mnt/minio/lakehouse/gold/skills_progression_89cbebdb-2c34-4ca4-a6be-c6e58e91a0cc/data/
 mnt/minio/lakehouse/gold/world_summary_f0651177-c57d-432d-bf9b-44db00a3e865/data/
@@ -230,3 +230,5 @@ mnt/minio/lakehouse/gold/world_summary_f0651177-c57d-432d-bf9b-44db00a3e865/data
 mnt/notebooks/.Trash-0
 
 docker/trino/data
+streamlit_teste/
+app_vocation.py
