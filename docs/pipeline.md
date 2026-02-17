@@ -14,7 +14,7 @@ O desenho prioriza:
 
 ---
 
-## Orchestração com Apache Airflow
+## Orquestração com Apache Airflow com Apache Airflow
 O projeto utiliza duas DAGs principais para gerenciar o fluxo completo de dados, garantindo que a extração e o processamento sejam organizados, escaláveis e rastreáveis.
 
 ### DAGs Principais
@@ -70,12 +70,6 @@ Exemplo de tasks:
    - extract_vocation (none, knight, paladin, sorcerer, druid, monk)
    - extract_skills (axe, sword, club, distance, magic_level, fist, shielding)
 
-### Características
-  - Cada vocação é uma task independente
-  - Cada skill é uma task independente
-  - Cada categoria extra é uma task independente
-  - Execução paralela
-  - Retry automático
 
 ### Output: Arquivos CSV no MinIO organizados por:
 ```text
@@ -113,7 +107,7 @@ Dependência: É acionada automaticamente somente após os dados chegarem na Lan
   - Jobs Spark separados por domínio
   - Uso de SparkSubmitOperator
   - Escrita Iceberg + Nessie
-  - 
+ 
 Detalhes de execução:
   - Cada categoria Bronze possui um job Spark independente:
   - Bronze Vocation > Silver Vocation 
@@ -167,7 +161,7 @@ A camada Silver garante rastreabilidade, histórico completo e consistência dos
 
 Silver → Gold
 A camada Gold é a camada analítica final do Lakehouse, responsável por consolidar dados agregados e métricas prontas para consumo em dashboards e análises avançadas. Ela utiliza tabelas Iceberg versionadas, garantindo histórico, rastreabilidade e consultas eficientes.
-Criação das tabelas da camada gold
+Nessa etapa são criadas tabelas analíticas como rankings globais, resumos por mundo e vocação e tabelas de progressão histórica.
 
 
 ### Estratégia de Incrementalidade
@@ -197,6 +191,6 @@ Gold	| INSERT
   - Escalável
   - Reprocessável
 
-## Screanshot
+## Screenshot
 ![Lakehouse Pipeline](docs/lakehouse_pipeline_success.png)
 ![Landing Highscore Pipeline](docs/landing__highscore_pipeline_success.png)
