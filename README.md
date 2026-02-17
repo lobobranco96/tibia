@@ -54,6 +54,7 @@ Essa abordagem prepara o Lakehouse para crescimento contínuo, auditoria e anál
 - Ambiente: docs/environment.md  
 - Visualização: docs/visualization.md
 - Tabelas Gold: docs/gold_tables.md
+- Extraction: docs/extraction.md
 
 
 
