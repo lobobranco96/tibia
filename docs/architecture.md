@@ -160,3 +160,38 @@ Permite:
   - Versionada
   - Auditável
   - Pronta para crescimento
+
+### Estrutura do projeto
+
+```text
+├── docker
+│   ├── airflow/
+│   ├── notebook/
+│   ├── prometheus/
+│   ├── spark/
+│   ├── streamlit/
+│   └── trino/
+├── docs
+│   ├── data/
+│   ├── images/
+│   ├── architecture.md
+│   ├── environment.md
+│   ├── pipeline.md
+│   └── visualization.md
+├── english_readme.md
+├── Makefile
+├── mnt
+│   ├── airflow/
+│   ├── minio/
+│   ├── notebooks/
+│   ├── src/
+│   └── tests_requirements.txt
+├── README.md
+├── services
+│   ├── lakehouse-readwrite.json
+│   ├── lakehouse.yaml
+│   ├── observability.yaml
+│   ├── orchestration.yaml
+│   ├── processing.yaml
+│   └── visualization.yaml
+```
