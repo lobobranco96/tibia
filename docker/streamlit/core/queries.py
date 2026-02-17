@@ -57,16 +57,39 @@ def skills_global_rank(snapshot_date=None):
     conn = get_trino_connection()
 
     base_query = """
+    WITH dedup AS (
         SELECT
-            rank,
             name,
             world,
             skill_name,
             vocation,
             skill_level,
             updated_at,
-            snapshot_date
+            snapshot_date,
+            ROW_NUMBER() OVER (
+                PARTITION BY snapshot_date, name, skill_name
+                ORDER BY updated_at DESC
+            ) AS rn
         FROM nessie.gold.skills_global_rank
+    ),
+    latest AS (
+        SELECT *
+        FROM dedup
+        WHERE rn = 1
+    )
+    SELECT
+        ROW_NUMBER() OVER (
+            PARTITION BY snapshot_date, skill_name
+            ORDER BY skill_level DESC, name ASC
+        ) AS rank,
+        name,
+        world,
+        skill_name,
+        vocation,
+        skill_level,
+        updated_at,
+        snapshot_date
+    FROM latest
     """
 
     if snapshot_date:
@@ -76,7 +99,6 @@ def skills_global_rank(snapshot_date=None):
     base_query += " ORDER BY snapshot_date DESC, skill_name, rank"
 
     return pd.read_sql(base_query, conn)
-
 
 
 # WORLD SUMMARY
@@ -143,4 +165,5 @@ def skill_progression():
     """
 
     return pd.read_sql(query, conn)
+
 
