@@ -1,5 +1,4 @@
 CREATE TABLE IF NOT EXISTS nessie.gold.skills_global_rank (
-    rank BIGINT,
     name STRING,
     world STRING,
     skill_name STRING,
