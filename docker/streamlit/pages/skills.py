@@ -2,9 +2,7 @@ import pandas as pd
 import streamlit as st
 from core.queries import skills_global_rank
 
-# ===============================
 # CONFIGURATION
-# ===============================
 st.set_page_config(
     page_title="Tibia - Global Skill Ranking",
     layout="wide"
@@ -12,16 +10,12 @@ st.set_page_config(
 
 st.title("🛡️ Tibia - Global Skill Ranking by Category")
 
-# ===============================
 # REFRESH BUTTON
-# ===============================
 if st.sidebar.button("🔄 Refresh data"):
     st.cache_data.clear()
     st.rerun()
 
-# ===============================
 # LOAD DATA
-# ===============================
 @st.cache_data(show_spinner="Loading skill ranking...")
 def load_data():
     df = skills_global_rank()
@@ -42,9 +36,7 @@ if df.empty:
     st.warning("No data available.")
     st.stop()
 
-# ===============================
 # SIDEBAR FILTERS
-# ===============================
 st.sidebar.header("🎛️ Filters")
 
 # Snapshot Date
@@ -82,9 +74,7 @@ player_search = st.sidebar.text_input(
     value=""
 ).strip().lower()
 
-# ===============================
 # APPLY FILTERS
-# ===============================
 filtered_df = df[
     (df["snapshot_date"].dt.normalize() == selected_date) &
     (df["skill_name"] == skill_selected) &
@@ -103,9 +93,7 @@ if filtered_df.empty:
     st.warning("No data found for selected filters.")
     st.stop()
 
-# ===============================
 # METRICS
-# ===============================
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 col1.metric("👥 Players", len(filtered_df))
@@ -123,9 +111,7 @@ col6.metric(
 
 st.markdown("---")
 
-# ===============================
 # TABLE
-# ===============================
 st.subheader(f"📋 {skill_selected} — Top {top_n}")
 
 df_display = filtered_df.copy()
@@ -140,3 +126,4 @@ st.dataframe(
     use_container_width=True,
     hide_index=True
 )
+
