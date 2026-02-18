@@ -3,9 +3,7 @@ import streamlit as st
 import plotly.express as px
 from core.queries import skill_progression
 
-# ===============================
 # STREAMLIT CONFIG
-# ===============================
 st.set_page_config(
     page_title="Tibia - Player Skill Progression",
     layout="wide"
@@ -13,9 +11,7 @@ st.set_page_config(
 
 st.title("📈 Tibia – Player Skill Progression")
 
-# ===============================
 # LOAD DATA
-# ===============================
 @st.cache_data(show_spinner="Loading skill progression...")
 def load_progression():
     df = skill_progression()
@@ -25,9 +21,7 @@ def load_progression():
 
 df = load_progression()
 
-# ===============================
 # SIDEBAR - FILTERS
-# ===============================
 st.sidebar.header("🔎 Filters")
 
 # World
@@ -61,9 +55,7 @@ player_search = st.sidebar.text_input(
     key="player_search_skills"
 ).strip().lower()
 
-# ===============================
 # FILTER DATA
-# ===============================
 filtered_df = df.copy()
 
 if world != "All":
@@ -83,9 +75,7 @@ if filtered_df.empty:
     st.warning("No data found for the selected filters.")
     st.stop()
 
-# ===============================
 # SELECT PLAYER
-# ===============================
 player = st.sidebar.selectbox(
     "Player",
     sorted(filtered_df["name"].unique()),
@@ -98,9 +88,7 @@ if player_df.empty:
     st.warning("No data found for the selected player.")
     st.stop()
 
-# ===============================
 # KPIs
-# ===============================
 st.subheader(f"🎮 Player: {player}")
 
 info_col1, info_col2, info_col3 = st.columns(3)
@@ -114,9 +102,7 @@ col2.metric("Total Skill Gained", int(player_df["skill_gain"].sum()))
 col3.metric("Average Skill / Day", round(player_df["avg_skill_per_day"].mean(), 2))
 col4.metric("Days Monitored", int(player_df["days_between_updates"].sum()))
 
-# ===============================
 # DATA TABLE
-# ===============================
 st.subheader("📊 Progress History")
 
 player_df["skill_gain"] = player_df["skill_gain"].astype(float)
@@ -143,9 +129,7 @@ st.dataframe(
     use_container_width=True
 )
 
-# ===============================
 # CHARTS
-# ===============================
 st.subheader("📈 Progress Over Time")
 
 fig_skill = px.line(
@@ -158,3 +142,4 @@ fig_skill = px.line(
 )
 
 st.plotly_chart(fig_skill, use_container_width=True)
+
