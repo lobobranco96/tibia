@@ -2,9 +2,7 @@ import pandas as pd
 import streamlit as st
 from core.queries import world_summary
 
-# ===============================
 # CONFIGURATION
-# ===============================
 st.set_page_config(
     page_title="Tibia - Players by World",
     layout="wide"
@@ -12,9 +10,7 @@ st.set_page_config(
 
 st.title("🌍 Tibia - Player Distribution by Vocation and World")
 
-# ===============================
 # LOAD DATA
-# ===============================
 @st.cache_data(show_spinner="Loading world summary...")
 def load_data():
     df = world_summary()
@@ -27,9 +23,7 @@ def load_data():
 
 df = load_data()
 
-# ===============================
 # SIDEBAR FILTERS
-# ===============================
 st.sidebar.header("🎛️ Filters")
 
 # World Type
@@ -55,18 +49,14 @@ vocation_selected = st.sidebar.multiselect(
     default=vocations
 )
 
-# ===============================
 # APPLY FILTERS
-# ===============================
 df_filtered = df[
     (df["world_type"].isin(world_type)) &
     (df["world"].isin(world_selected)) &
     (df["vocation"].isin(vocation_selected))
 ]
 
-# ===============================
 # AGGREGATIONS
-# ===============================
 total_players = int(df_filtered["players_count"].sum())
 
 players_by_world = (
@@ -81,9 +71,7 @@ players_by_vocation = (
     .sort_values("players_count", ascending=False)
 )
 
-# ===============================
 # METRICS
-# ===============================
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("Total Players", total_players)
@@ -96,9 +84,7 @@ col4.metric(
 
 st.markdown("---")
 
-# ===============================
 # TABLES
-# ===============================
 st.subheader("📋 Players by World")
 st.dataframe(
     players_by_world,
@@ -123,3 +109,4 @@ st.dataframe(
     use_container_width=True,
     hide_index=True
 )
+
