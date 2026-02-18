@@ -3,9 +3,7 @@ import streamlit as st
 import plotly.express as px
 from core.queries import player_progression
 
-# ===============================
 # STREAMLIT CONFIG
-# ===============================
 st.set_page_config(
     page_title="Tibia - Player Experience Progression",
     layout="wide"
@@ -13,9 +11,7 @@ st.set_page_config(
 
 st.title("📈 Tibia – Player Level & Experience Progression")
 
-# ===============================
 # LOAD DATA
-# ===============================
 @st.cache_data(show_spinner="Loading player progression...")
 def load_progression():
     df = player_progression()
@@ -25,9 +21,7 @@ def load_progression():
 
 df = load_progression()
 
-# ===============================
 # SIDEBAR - FILTERS
-# ===============================
 st.sidebar.header("🔎 Filters")
 
 # World
@@ -53,9 +47,7 @@ player_search = st.sidebar.text_input(
     key="player_search"
 ).strip().lower()
 
-# ===============================
 # FILTER DATA
-# ===============================
 filtered_df = df.copy()
 
 if world != "All":
@@ -82,9 +74,7 @@ player = st.sidebar.selectbox(
 # Filter dataframe for selected player
 player_df = filtered_df[filtered_df["name"] == player].sort_values("current_start_date")
 
-# ===============================
 # KPIs
-# ===============================
 st.subheader(f"🎮 Player: {player}")
 
 info_col1, info_col2, info_col3 = st.columns(3)
@@ -98,9 +88,7 @@ col2.metric("Total XP Gained", f"{int(player_df['experience_gain'].sum()):,}")
 col3.metric("Average XP / Day", f"{player_df['avg_xp_per_day'].mean():,.0f}")
 col4.metric("Days Monitored", int(player_df["days_between_updates"].sum()))
 
-# ===============================
 # DATA TABLE
-# ===============================
 st.subheader("📊 Progress History")
 
 player_df["experience_gain"] = player_df["experience_gain"].astype(float)
@@ -128,9 +116,7 @@ st.dataframe(
     use_container_width=True
 )
 
-# ===============================
 # CHARTS
-# ===============================
 st.subheader("📈 Progress Over Time")
 
 fig_level = px.line(
@@ -149,3 +135,4 @@ fig_xp = px.bar(
     title="XP Gained per Period"
 )
 st.plotly_chart(fig_xp, use_container_width=True)
+
