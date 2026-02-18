@@ -1,5 +1,3 @@
-# Lakehouse open-source para histórico de rankings do Tibia usando Airflow + Spark + Iceberg + Nessie + MinIO + Trino + Streamlit.
-
 ## Visão Geral
 
 Este projeto tem como objetivo construir um Data Lakehouse completo, com orquestração via Apache Airflow, processamento distribuído em PySpark, armazenamento no MinIO (S3) e tabelas Iceberg para gerenciamento de dados versionados e consultas analíticas eficientes.
