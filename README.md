@@ -37,6 +37,8 @@ Mesmo com ingestões diárias pequenas, a camada Bronze foi construída sobre Ap
 O Spark é utilizado não pelo volume atual dos dados, mas por ser o engine mais maduro para escrita transacional em Iceberg, integração com Nessie e evolução futura do pipeline.
 Essa abordagem prepara o Lakehouse para crescimento contínuo, auditoria e análises temporais sem necessidade de refatoração estrutural.
 
+![Architecture](docs/images/architecture.png)
+
 ## Sumário
 - [Visão Geral](https://github.com/lobobranco96/tibia)
 - [Source code](https://github.com/lobobranco96/tibia/tree/main/mnt/src)
